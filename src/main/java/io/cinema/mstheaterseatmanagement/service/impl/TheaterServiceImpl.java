@@ -1,6 +1,5 @@
 package io.cinema.mstheaterseatmanagement.service.impl;
 
-import io.cinema.mstheaterseatmanagement.domain.dto.OperatingHoursDto;
 import io.cinema.mstheaterseatmanagement.domain.dto.TheaterDto;
 import io.cinema.mstheaterseatmanagement.domain.entity.TheaterRowProjection;
 import io.cinema.mstheaterseatmanagement.repository.TheaterRepository;
@@ -9,8 +8,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.Objects;
+import java.util.UUID;
+
+import static io.cinema.mstheaterseatmanagement.mapper.TheaterProjectionMapper.toTheaterDto;
 
 @Slf4j
 @Service
@@ -29,39 +32,22 @@ public class TheaterServiceImpl implements TheaterService {
                         theaterGroup
                                 .collectList()
                                 .mapNotNull(rows -> {
-                                    if (rows.isEmpty()) {
-                                        return null;
+                                    if (!rows.isEmpty()) {
+                                        return toTheaterDto(rows, rows.getFirst().theaterId());
                                     }
-
-                                    var base = rows.getFirst();
-                                    var hoursList = rows.stream()
-                                            .filter(r -> r.dayOfWeek() != null)
-                                            .map(projection ->
-                                                    new OperatingHoursDto(
-                                                            projection.dayOfWeek(),
-                                                            projection.startTime(),
-                                                            projection.endTime()
-                                                    ))
-                                            .toList();
-
-                                    var address = String.format(
-                                            "%s, %s, %s, ZIP Code: %s",
-                                            base.street(),
-                                            base.city(),
-                                            base.state(),
-                                            base.zip()
-                                    );
-
-                                    return new TheaterDto(
-                                            base.name(),
-                                            base.phone(),
-                                            address,
-                                            hoursList
-                                    );
-
+                                    return null;
                                 })
                 );
 
+    }
+
+    @Override
+    public Mono<TheaterDto> getTheaterById(UUID theaterId) {
+        return theaterRepository
+                .findTheaterDetailsById(theaterId)
+                .filter(projection -> Objects.nonNull(projection.theaterId()))
+                .collectList()
+                .mapNotNull(projections -> toTheaterDto(projections, theaterId));
     }
 
 }
