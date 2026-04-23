@@ -7,10 +7,12 @@ import java.util.UUID;
 public record TheaterRowProjection(
         UUID theaterId,
         String name,
+        String email,
         String phone,
         String street,
         String city,
         String state,
+        String country,
         String zip,
         DayOfWeek dayOfWeek,
         LocalTime startTime,

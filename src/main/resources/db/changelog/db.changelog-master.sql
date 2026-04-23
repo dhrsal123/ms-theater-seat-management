@@ -38,3 +38,11 @@ CREATE TABLE IF NOT EXISTS operating_hours
     updated_by  VARCHAR(255),
     CONSTRAINT uq_theater_day_of_week UNIQUE (theater_id, day_of_week)
 );
+
+--changeset cinema-system:2
+-- Description: Add auditing columns to the address table
+ALTER TABLE address
+    ADD COLUMN created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ADD COLUMN updated_at TIMESTAMP,
+    ADD COLUMN created_by VARCHAR(255),
+    ADD COLUMN updated_by VARCHAR(255);

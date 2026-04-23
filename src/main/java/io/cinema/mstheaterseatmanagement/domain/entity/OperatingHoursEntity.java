@@ -1,5 +1,6 @@
 package io.cinema.mstheaterseatmanagement.domain.entity;
 
+import io.cinema.domain.entity.AuditableEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

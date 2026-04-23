@@ -1,5 +1,6 @@
 package io.cinema.mstheaterseatmanagement.domain.entity;
 
+import io.cinema.domain.entity.AuditableEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -16,7 +17,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Table("address")
 @AllArgsConstructor
-public class AddressEntity {
+public class AddressEntity extends AuditableEntity {
     @Id
     private UUID id;
 

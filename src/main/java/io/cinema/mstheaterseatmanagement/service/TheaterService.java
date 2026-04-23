@@ -1,6 +1,7 @@
 package io.cinema.mstheaterseatmanagement.service;
 
-import io.cinema.mstheaterseatmanagement.domain.dto.TheaterDto;
+import io.cinema.mstheaterseatmanagement.domain.dto.request.TheaterRequestDto;
+import io.cinema.mstheaterseatmanagement.domain.dto.response.TheaterResponseDto;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -8,7 +9,9 @@ import java.util.UUID;
 
 public interface TheaterService {
 
-    Flux<TheaterDto> getAllTheaters(Integer page, Integer size);
+    Flux<TheaterResponseDto> getAllTheaters(Integer page, Integer size);
 
-    Mono<TheaterDto> getTheaterById(UUID theaterId);
+    Mono<TheaterResponseDto> getTheaterById(UUID theaterId);
+
+    Mono<TheaterResponseDto> createTheater(TheaterRequestDto theaterRequestDto);
 }

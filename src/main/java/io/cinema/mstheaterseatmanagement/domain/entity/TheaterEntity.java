@@ -1,5 +1,6 @@
 package io.cinema.mstheaterseatmanagement.domain.entity;
 
+import io.cinema.domain.entity.AuditableEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -22,6 +23,7 @@ public class TheaterEntity extends AuditableEntity {
     private UUID id;
 
     private String name;
+    private String email;
     private String phone;
 
     @Column("address_id")
