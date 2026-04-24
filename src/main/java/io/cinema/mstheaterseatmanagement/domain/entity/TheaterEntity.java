@@ -15,7 +15,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @Builder
-@Table("theaters")
+@Table("theater")
 @NoArgsConstructor
 @AllArgsConstructor
 public class TheaterEntity extends AuditableEntity {

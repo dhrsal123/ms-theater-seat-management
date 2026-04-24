@@ -46,3 +46,10 @@ ALTER TABLE address
     ADD COLUMN updated_at TIMESTAMP,
     ADD COLUMN created_by VARCHAR(255),
     ADD COLUMN updated_by VARCHAR(255);
+
+--changeset cinema-system:3
+-- Description: Rename theater and operating_hours tables to singular
+ALTER TABLE theaters
+    RENAME TO theater;
+ALTER TABLE operating_hours
+    RENAME TO operating_hour;

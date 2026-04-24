@@ -19,12 +19,12 @@ public interface TheaterRepository extends ReactiveCrudRepository<TheaterEntity,
                     oh.start_time as start_time, 
                     oh.end_time as end_time 
                 FROM (
-                    SELECT * FROM theaters 
+                    SELECT * FROM theater 
                     ORDER BY name 
                     LIMIT :size OFFSET :offset
                 ) t
                 JOIN address a ON t.address_id = a.id
-                LEFT JOIN operating_hours oh ON t.id = oh.theater_id
+                LEFT JOIN operating_hour oh ON t.id = oh.theater_id
             """)
     Flux<TheaterRowProjection> findAllTheaterDetails(int size, long offset);
 
@@ -37,11 +37,11 @@ public interface TheaterRepository extends ReactiveCrudRepository<TheaterEntity,
                     oh.start_time as start_time, 
                     oh.end_time as end_time 
                 FROM (
-                    SELECT * FROM theaters 
-                    WHERE theaters.id = :id
+                    SELECT * FROM theater 
+                    WHERE theater.id = :id
                 ) t
                 JOIN address a ON t.address_id = a.id
-                LEFT JOIN operating_hours oh ON t.id = oh.theater_id
+                LEFT JOIN operating_hour oh ON t.id = oh.theater_id
             """)
     Flux<TheaterRowProjection> findTheaterDetailsById(UUID id);
 

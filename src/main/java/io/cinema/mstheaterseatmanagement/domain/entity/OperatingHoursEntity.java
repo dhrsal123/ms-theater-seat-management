@@ -17,7 +17,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @Builder
-@Table("operating_hours")
+("operating_hour")
 @NoArgsConstructor
 @AllArgsConstructor
 public class OperatingHoursEntity extends AuditableEntity {

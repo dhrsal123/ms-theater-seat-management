@@ -14,4 +14,6 @@ public interface TheaterService {
     Mono<TheaterResponseDto> getTheaterById(UUID theaterId);
 
     Mono<TheaterResponseDto> createTheater(TheaterRequestDto theaterRequestDto);
+
+    Mono<Void> deleteTheater(UUID theaterId);
 }

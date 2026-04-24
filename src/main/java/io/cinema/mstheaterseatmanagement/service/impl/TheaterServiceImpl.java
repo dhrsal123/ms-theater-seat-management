@@ -15,7 +15,6 @@ import io.cinema.mstheaterseatmanagement.service.TheaterService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.reactive.TransactionalOperator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -59,7 +58,6 @@ public class TheaterServiceImpl implements TheaterService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public Mono<TheaterResponseDto> getTheaterById(UUID theaterId) {
         return theaterRepository
                 .findTheaterDetailsById(theaterId)
@@ -70,7 +68,6 @@ public class TheaterServiceImpl implements TheaterService {
     }
 
     @Override
-    @Transactional
     public Mono<TheaterResponseDto> createTheater(TheaterRequestDto theaterRequestDto) {
 
         var addressDto = theaterRequestDto.address();
@@ -124,11 +121,35 @@ public class TheaterServiceImpl implements TheaterService {
                             );
 
                 })
+                .as(transactionalOperator::transactional)
                 .doOnError(e -> log.error("Failed to create theater: {}", e.getMessage()))
                 .onErrorMap(
                         CinemaException.class,
                         e -> new CinemaException(
                                 "DB error during theater creation",
+                                CinemaExceptionTypes.TECHNICAL_ERROR
+                        )
+                );
+    }
+
+    @Override
+    public Mono<Void> deleteTheater(UUID theaterId) {
+        return theaterRepository.findById(theaterId)
+                .switchIfEmpty(Mono.error(new CinemaException(
+                        "Theater with ID " + theaterId + " not found",
+                        CinemaExceptionTypes.BAD_REQUEST
+                )))
+                .flatMap(theater ->
+                        operatingHoursRepository.deleteAllByTheaterId(theaterId)
+                                .then(theaterRepository.delete(theater))
+                                .then(addressRepository.deleteById(theater.getAddressId()))
+                )
+                .as(transactionalOperator::transactional)
+                .doOnError(e -> log.error("Failed to delete theater with ID {}: {}", theaterId, e.getMessage()))
+                .onErrorMap(
+                        throwable -> !(throwable instanceof CinemaException),
+                        e -> new CinemaException(
+                                "DB error during theater deletion",
                                 CinemaExceptionTypes.TECHNICAL_ERROR
                         )
                 );
