@@ -3,6 +3,7 @@ package io.cinema.mstheaterseatmanagement.service.impl;
 import io.cinema.domain.enumerated.CinemaExceptionTypes;
 import io.cinema.domain.exceptions.CinemaException;
 import io.cinema.mstheaterseatmanagement.domain.dto.request.TheaterRequestDto;
+import io.cinema.mstheaterseatmanagement.domain.dto.request.UpdateTheaterRequestDto;
 import io.cinema.mstheaterseatmanagement.domain.dto.response.OperatingHoursResponseDto;
 import io.cinema.mstheaterseatmanagement.domain.dto.response.TheaterResponseDto;
 import io.cinema.mstheaterseatmanagement.domain.entity.AddressEntity;
@@ -22,6 +23,7 @@ import reactor.core.publisher.Mono;
 import java.util.Objects;
 import java.util.UUID;
 
+import static io.cinema.domain.enumerated.CinemaExceptionTypes.TECHNICAL_ERROR;
 import static io.cinema.mstheaterseatmanagement.mapper.TheaterMapper.toTheaterDto;
 import static io.cinema.mstheaterseatmanagement.mapper.TheaterMapper.toTheaterEntity;
 import static io.cinema.mstheaterseatmanagement.utils.AddressUtils.getAddress;
@@ -127,8 +129,83 @@ public class TheaterServiceImpl implements TheaterService {
                         CinemaException.class,
                         e -> new CinemaException(
                                 "DB error during theater creation",
-                                CinemaExceptionTypes.TECHNICAL_ERROR
+                                TECHNICAL_ERROR
                         )
+                );
+    }
+
+    @Override
+    public Mono<TheaterResponseDto> updateTheater(UpdateTheaterRequestDto theaterRequestDto) {
+        var theaterId = theaterRequestDto.theaterId();
+
+        return theaterRepository.findById(theaterId)
+                .switchIfEmpty(Mono.error(new CinemaException(
+                                "Theater with ID: " + theaterId + " not found.",
+                                CinemaExceptionTypes.BAD_REQUEST
+                        ))
+                )
+                .flatMap(existingTheater -> {
+
+                    var addressDto = theaterRequestDto.address();
+
+                    var updatedAddress = AddressEntity.builder()
+                            .id(existingTheater.getAddressId())
+                            .street(addressDto.street())
+                            .city(addressDto.city())
+                            .state(addressDto.state())
+                            .country(addressDto.country())
+                            .zip(addressDto.zip())
+                            .build();
+
+                    return addressRepository.save(updatedAddress)
+                            .flatMap(savedAddress -> {
+                                        var theaterEntity = toTheaterEntity(savedAddress.getId(), theaterRequestDto);
+
+                                        return theaterRepository.save(theaterEntity)
+                                                .flatMap(savedTheater ->
+                                                        operatingHoursRepository.deleteAllByTheaterId(theaterId)
+                                                                .thenMany(Flux.fromIterable(theaterRequestDto.operatingHours()))
+                                                                .filter(Objects::nonNull)
+                                                                .flatMap(ohDto -> {
+                                                                            var operatingHoursEntity = OperatingHoursEntity.builder()
+                                                                                    .dayOfWeek(ohDto.dayOfWeek())
+                                                                                    .startTime(ohDto.start())
+                                                                                    .endTime(ohDto.end())
+                                                                                    .theaterId(savedTheater.getId())
+                                                                                    .build();
+
+                                                                            return operatingHoursRepository.save(operatingHoursEntity);
+                                                                        }
+                                                                ).collectList()
+                                                                .map(savedHours -> {
+                                                                    var operatingHoursResponse = savedHours.stream()
+                                                                            .map(h -> new OperatingHoursResponseDto(
+                                                                                    h.getDayOfWeek(),
+                                                                                    h.getStartTime(),
+                                                                                    h.getEndTime()
+                                                                            )).toList();
+
+                                                                    var id = savedTheater.getId();
+                                                                    return TheaterResponseDto.builder()
+                                                                            .theaterId(id.toString())
+                                                                            .name(savedTheater.getName())
+                                                                            .email(savedTheater.getEmail())
+                                                                            .phone(savedTheater.getPhone())
+                                                                            .location(getAddress(savedAddress))
+                                                                            .operatingHours(operatingHoursResponse)
+                                                                            .build();
+                                                                })
+
+
+                                                );
+                                    }
+                            );
+                })
+                .as(transactionalOperator::transactional)
+                .doOnError(e -> log.error("Failed to update theater: {}", e.getMessage()))
+                .onErrorMap(
+                        e -> !(e instanceof CinemaException),
+                        e -> new CinemaException("DB error during update", TECHNICAL_ERROR)
                 );
     }
 
@@ -150,7 +227,7 @@ public class TheaterServiceImpl implements TheaterService {
                         throwable -> !(throwable instanceof CinemaException),
                         e -> new CinemaException(
                                 "DB error during theater deletion",
-                                CinemaExceptionTypes.TECHNICAL_ERROR
+                                TECHNICAL_ERROR
                         )
                 );
     }

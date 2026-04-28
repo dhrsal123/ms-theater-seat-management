@@ -2,6 +2,7 @@ package io.cinema.mstheaterseatmanagement.controller;
 
 import io.cinema.domain.annotations.HasManagerRole;
 import io.cinema.mstheaterseatmanagement.domain.dto.request.TheaterRequestDto;
+import io.cinema.mstheaterseatmanagement.domain.dto.request.UpdateTheaterRequestDto;
 import io.cinema.mstheaterseatmanagement.domain.dto.response.TheaterResponseDto;
 import io.cinema.mstheaterseatmanagement.service.TheaterService;
 import jakarta.validation.Valid;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -52,6 +54,15 @@ public class TheaterController {
     @PostMapping
     public Mono<ResponseEntity<TheaterResponseDto>> createTheater(@RequestBody @Valid TheaterRequestDto theater) {
         return theaterService.createTheater(theater)
+                .map(ResponseEntity::ok);
+    }
+
+    @HasManagerRole
+    @PutMapping
+    public Mono<ResponseEntity<TheaterResponseDto>> updateTheater(
+            @RequestBody @Valid UpdateTheaterRequestDto theater
+    ) {
+        return theaterService.updateTheater(theater)
                 .map(ResponseEntity::ok);
     }
 
