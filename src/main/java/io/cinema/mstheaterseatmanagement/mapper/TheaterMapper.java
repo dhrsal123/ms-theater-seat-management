@@ -1,6 +1,7 @@
 package io.cinema.mstheaterseatmanagement.mapper;
 
 import io.cinema.mstheaterseatmanagement.domain.dto.request.TheaterRequestDto;
+import io.cinema.mstheaterseatmanagement.domain.dto.request.UpdateTheaterRequestDto;
 import io.cinema.mstheaterseatmanagement.domain.dto.response.OperatingHoursResponseDto;
 import io.cinema.mstheaterseatmanagement.domain.dto.response.TheaterResponseDto;
 import io.cinema.mstheaterseatmanagement.domain.entity.TheaterEntity;
@@ -45,6 +46,17 @@ public class TheaterMapper {
 
     public static TheaterEntity toTheaterEntity(UUID addressId, TheaterRequestDto theaterRequestDto) {
         return TheaterEntity.builder()
+                .name(theaterRequestDto.name())
+                .email(theaterRequestDto.email())
+                .phone(theaterRequestDto.phone())
+                .addressId(addressId)
+                .build();
+    }
+
+
+    public static TheaterEntity toTheaterEntity(UUID addressId, UpdateTheaterRequestDto theaterRequestDto) {
+        return TheaterEntity.builder()
+                .id(theaterRequestDto.theaterId())
                 .name(theaterRequestDto.name())
                 .email(theaterRequestDto.email())
                 .phone(theaterRequestDto.phone())
