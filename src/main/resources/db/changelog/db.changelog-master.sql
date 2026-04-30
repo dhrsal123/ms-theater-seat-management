@@ -53,3 +53,34 @@ ALTER TABLE theaters
     RENAME TO theater;
 ALTER TABLE operating_hours
     RENAME TO operating_hour;
+
+--changeset cinema-system:4
+-- Description: Add room and seat tables with CHECK constraints for enums
+CREATE TABLE IF NOT EXISTS room
+(
+    id         UUID PRIMARY KEY      DEFAULT gen_random_uuid(),
+    name       VARCHAR(255) NOT NULL,
+    theater_id UUID         NOT NULL REFERENCES theater (id) ON DELETE CASCADE,
+    created_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255)
+);
+
+CREATE TABLE IF NOT EXISTS seat
+(
+    id              UUID PRIMARY KEY      DEFAULT gen_random_uuid(),
+    price_increment DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+    row_number      INTEGER          NOT NULL,
+    col_number      INTEGER          NOT NULL,
+    seat_status     VARCHAR(50)      NOT NULL,
+    seat_type       VARCHAR(50)      NOT NULL,
+    room_id         UUID             NOT NULL REFERENCES room (id) ON DELETE CASCADE,
+    created_at      TIMESTAMP        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP,
+    created_by      VARCHAR(255),
+    updated_by      VARCHAR(255),
+    CONSTRAINT uq_room_seat_coordinates UNIQUE (room_id, row_number, col_number),
+    CONSTRAINT chk_seat_status CHECK (seat_status IN ('OPERATIONAL', 'UNDER_MAINTENANCE')),
+    CONSTRAINT chk_seat_type CHECK (seat_type IN ('STANDARD', 'PREMIUM', 'COUPLE_SEAT', 'WHEELCHAIR_ACCESSIBLE', 'COMPANION', 'EASY_ACCESS'))
+);
