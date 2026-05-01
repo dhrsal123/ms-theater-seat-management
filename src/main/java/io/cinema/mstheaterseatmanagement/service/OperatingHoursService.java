@@ -1,6 +1,5 @@
 package io.cinema.mstheaterseatmanagement.service;
 
-import io.cinema.mstheaterseatmanagement.domain.dto.request.OperatingHoursInfoRequestDto;
 import io.cinema.mstheaterseatmanagement.domain.dto.request.OperatingHoursRequestDto;
 import io.cinema.mstheaterseatmanagement.domain.dto.response.OperatingHoursInfoResponseDto;
 import reactor.core.publisher.Flux;
@@ -17,7 +16,10 @@ public interface OperatingHoursService {
     );
 
 
-    Mono<OperatingHoursInfoResponseDto> updateOperatingHours(OperatingHoursInfoRequestDto operatingHoursInfo);
+    Mono<OperatingHoursInfoResponseDto> updateOperatingHours(
+            UUID operatingHoursId,
+            OperatingHoursRequestDto operatingHoursInfo
+    );
 
     Mono<Void> deleteOperatingHours(UUID operatingHoursId);
 }

@@ -2,7 +2,6 @@ package io.cinema.mstheaterseatmanagement.service.impl;
 
 import io.cinema.domain.enumerated.CinemaExceptionTypes;
 import io.cinema.domain.exceptions.CinemaException;
-import io.cinema.mstheaterseatmanagement.domain.dto.request.OperatingHoursInfoRequestDto;
 import io.cinema.mstheaterseatmanagement.domain.dto.request.OperatingHoursRequestDto;
 import io.cinema.mstheaterseatmanagement.domain.dto.response.OperatingHoursInfoResponseDto;
 import io.cinema.mstheaterseatmanagement.domain.entity.OperatingHoursEntity;
@@ -86,9 +85,12 @@ public class OperatingHoursServiceImpl implements OperatingHoursService {
     }
 
     @Override
-    public Mono<OperatingHoursInfoResponseDto> updateOperatingHours(OperatingHoursInfoRequestDto operatingHoursInfo) {
+    public Mono<OperatingHoursInfoResponseDto> updateOperatingHours(
+            UUID operatingHoursId,
+            OperatingHoursRequestDto operatingHoursInfo
+    ) {
         return operatingHoursRepository
-                .findById(operatingHoursInfo.operatingHoursId())
+                .findById(operatingHoursId)
                 .switchIfEmpty(Mono.error(new CinemaException(
                         "The operating hour was not found.",
                         CinemaExceptionTypes.BAD_REQUEST

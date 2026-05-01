@@ -1,9 +1,7 @@
 package io.cinema.mstheaterseatmanagement.controller;
 
 
-import io.cinema.domain.annotations.HasEmployeeRole;
 import io.cinema.domain.annotations.HasManagerRole;
-import io.cinema.mstheaterseatmanagement.domain.dto.request.OperatingHoursInfoRequestDto;
 import io.cinema.mstheaterseatmanagement.domain.dto.request.OperatingHoursRequestDto;
 import io.cinema.mstheaterseatmanagement.domain.dto.response.OperatingHoursInfoResponseDto;
 import io.cinema.mstheaterseatmanagement.service.OperatingHoursService;
@@ -30,20 +28,19 @@ import java.util.UUID;
 @Validated
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1")
+@RequestMapping("/api/v1/theaters/{theaterId}/operating-hours")
 public class OperatingHoursController {
     private final OperatingHoursService operatingHoursService;
 
-    @HasManagerRole
-    @GetMapping("/theater/{theaterId}/operating-hours")
-    public ResponseEntity<Flux<OperatingHoursInfoResponseDto>> getTheaterOperatingHours(
+    @GetMapping
+    public Flux<OperatingHoursInfoResponseDto> getTheaterOperatingHours(
             @PathVariable @NotNull UUID theaterId
     ) {
-        return ResponseEntity.ok(operatingHoursService.getTheaterOperatingHours(theaterId));
+        return operatingHoursService.getTheaterOperatingHours(theaterId);
     }
 
     @HasManagerRole
-    @PostMapping("/theater/{theaterId}/operating-hours")
+    @PostMapping
     public Mono<ResponseEntity<OperatingHoursInfoResponseDto>> saveTheaterOperatingHours(
             @PathVariable @NotNull UUID theaterId,
             @Valid @RequestBody OperatingHoursRequestDto operatingHoursInfo
@@ -53,16 +50,20 @@ public class OperatingHoursController {
     }
 
     @HasManagerRole
-    @PutMapping("/operatingHours")
+    @PutMapping("/{operatingHoursId}")
     public Mono<ResponseEntity<OperatingHoursInfoResponseDto>> updateOperatingHours(
-            @Valid @RequestBody OperatingHoursInfoRequestDto operatingHoursInfo
+            @PathVariable @NotNull(message = "The operating hours id must be valid.") UUID operatingHoursId,
+            @Valid @RequestBody OperatingHoursRequestDto operatingHoursInfo
     ) {
-        return operatingHoursService.updateOperatingHours(operatingHoursInfo)
+        return operatingHoursService.updateOperatingHours(
+                        operatingHoursId,
+                        operatingHoursInfo
+                )
                 .map(ResponseEntity::ok);
     }
 
     @HasManagerRole
-    @DeleteMapping("/operatingHours/{operatingHoursId}")
+    @DeleteMapping("/{operatingHoursId}")
     public Mono<ResponseEntity<Void>> deleteOperatingHours(
             @PathVariable @NotNull UUID operatingHoursId
     ) {
