@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -41,12 +42,11 @@ public class OperatingHoursController {
 
     @HasManagerRole
     @PostMapping
-    public Mono<ResponseEntity<OperatingHoursInfoResponseDto>> saveTheaterOperatingHours(
+    public Flux<OperatingHoursInfoResponseDto> saveTheaterOperatingHours(
             @PathVariable @NotNull UUID theaterId,
-            @Valid @RequestBody OperatingHoursRequestDto operatingHoursInfo
+            @Valid @RequestBody List<OperatingHoursRequestDto> operatingHoursInfo
     ) {
-        return operatingHoursService.saveTheaterOperatingHours(theaterId, operatingHoursInfo)
-                .map(ResponseEntity::ok);
+        return operatingHoursService.saveTheaterOperatingHours(theaterId, operatingHoursInfo);
     }
 
     @HasManagerRole

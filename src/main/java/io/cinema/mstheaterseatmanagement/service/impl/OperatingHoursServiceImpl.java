@@ -15,7 +15,9 @@ import org.springframework.transaction.reactive.TransactionalOperator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static io.cinema.domain.enumerated.CinemaExceptionTypes.TECHNICAL_ERROR;
 
@@ -47,11 +49,10 @@ public class OperatingHoursServiceImpl implements OperatingHoursService {
     }
 
     @Override
-    public Mono<OperatingHoursInfoResponseDto> saveTheaterOperatingHours(
+    public Flux<OperatingHoursInfoResponseDto> saveTheaterOperatingHours(
             UUID theaterId,
-            OperatingHoursRequestDto operatingHoursRequest
+            List<OperatingHoursRequestDto> operatingHoursRequest
     ) {
-
         return theaterRepository
                 .findById(theaterId)
                 .switchIfEmpty(Mono.error(
@@ -60,15 +61,18 @@ public class OperatingHoursServiceImpl implements OperatingHoursService {
                                 CinemaExceptionTypes.BAD_REQUEST
                         )
                 ))
-                .flatMap(theater -> {
-                    var operatingHours = OperatingHoursEntity.builder()
-                            .dayOfWeek(operatingHoursRequest.dayOfWeek())
-                            .startTime(operatingHoursRequest.start())
-                            .endTime(operatingHoursRequest.end())
-                            .theaterId(theaterId)
-                            .build();
+                .flatMapMany(theater -> {
+                    var operatingHours = operatingHoursRequest.stream()
+                            .map(operatingHour ->
+                                    OperatingHoursEntity.builder()
+                                            .dayOfWeek(operatingHour.dayOfWeek())
+                                            .startTime(operatingHour.start())
+                                            .endTime(operatingHour.end())
+                                            .theaterId(theaterId)
+                                            .build()
+                            ).toList();
 
-                    return operatingHoursRepository.save(operatingHours);
+                    return operatingHoursRepository.saveAll(operatingHours);
                 })
                 .map(oH -> new OperatingHoursInfoResponseDto(
                         oH.getId(),
@@ -77,10 +81,10 @@ public class OperatingHoursServiceImpl implements OperatingHoursService {
                         oH.getEndTime()
                 ))
                 .as(transactionalOperator::transactional)
-                .doOnError(e -> log.error("Failed to find operating hours: {}", e.getMessage()))
+                .doOnError(e -> log.error("Failed to save operating hours: {}", e.getMessage()))
                 .onErrorMap(
                         e -> !(e instanceof CinemaException),
-                        e -> new CinemaException("DB error during read", TECHNICAL_ERROR)
+                        e -> new CinemaException("DB error during save", TECHNICAL_ERROR)
                 );
     }
 

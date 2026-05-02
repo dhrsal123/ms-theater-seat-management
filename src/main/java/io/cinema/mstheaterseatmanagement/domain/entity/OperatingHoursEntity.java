@@ -2,10 +2,10 @@ package io.cinema.mstheaterseatmanagement.domain.entity;
 
 import io.cinema.domain.entity.AuditableEntity;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
@@ -16,10 +16,10 @@ import java.util.UUID;
 
 @Getter
 @Setter
-@Builder
-@Table("operating_hour")
 @NoArgsConstructor
 @AllArgsConstructor
+@Table("operating_hour")
+@SuperBuilder(toBuilder = true)
 public class OperatingHoursEntity extends AuditableEntity {
     @Id
     private UUID id;
