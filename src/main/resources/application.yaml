@@ -36,6 +36,22 @@ logging:
   pattern:
     correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
 
+security:
+  commons:
+    oauth2:
+      jwk-set-uri: http://${KEYCLOAK_HOST}:8000/auth/realms/cinema-system/protocol/openid-connect/certs
+    cors:
+      allowed-origins:
+        - "*"
+      allowed-headers:
+        - "*"
+      allowed-methods:
+        - "GET"
+        - "POST"
+        - "PUT"
+        - "DELETE"
+        - "OPTIONS"
+
 
 management:
   opentelemetry:
