@@ -4,7 +4,7 @@ import io.cinema.domain.enumerated.CinemaExceptionTypes;
 import io.cinema.domain.exceptions.CinemaException;
 import io.cinema.mstheaterseatmanagement.domain.dto.request.OperatingHoursRequestDto;
 import io.cinema.mstheaterseatmanagement.domain.dto.response.OperatingHoursInfoResponseDto;
-import io.cinema.mstheaterseatmanagement.domain.entity.OperatingHoursEntity;
+import io.cinema.mstheaterseatmanagement.mapper.OperatingHoursMapper;
 import io.cinema.mstheaterseatmanagement.repository.OperatingHoursRepository;
 import io.cinema.mstheaterseatmanagement.repository.TheaterRepository;
 import io.cinema.mstheaterseatmanagement.service.OperatingHoursService;
@@ -17,7 +17,6 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static io.cinema.domain.enumerated.CinemaExceptionTypes.TECHNICAL_ERROR;
 
@@ -28,20 +27,15 @@ public class OperatingHoursServiceImpl implements OperatingHoursService {
     private final TheaterRepository theaterRepository;
     private final TransactionalOperator transactionalOperator;
     private final OperatingHoursRepository operatingHoursRepository;
+    private final OperatingHoursMapper operatingHoursMapper;
 
     @Override
     public Flux<OperatingHoursInfoResponseDto> getTheaterOperatingHours(UUID theaterId) {
         return operatingHoursRepository
                 .findOperatingHoursByTheaterId(theaterId)
-                .map(oH ->
-                        new OperatingHoursInfoResponseDto(
-                                oH.getId(),
-                                oH.getDayOfWeek(),
-                                oH.getStartTime(),
-                                oH.getEndTime()
-                        )
-                ).as(transactionalOperator::transactional)
-                .doOnError(e -> log.error("Failed to find operating hours: {}", e.getMessage()))
+                .map(operatingHoursMapper::toInfoResponseDto)
+                .as(transactionalOperator::transactional)
+                .doOnError(e -> log.error("Failed to find operating hours for theater: {}: {}", theaterId, e.getMessage()))
                 .onErrorMap(
                         e -> !(e instanceof CinemaException),
                         e -> new CinemaException("DB error during read", TECHNICAL_ERROR)
@@ -63,25 +57,14 @@ public class OperatingHoursServiceImpl implements OperatingHoursService {
                 ))
                 .flatMapMany(theater -> {
                     var operatingHours = operatingHoursRequest.stream()
-                            .map(operatingHour ->
-                                    OperatingHoursEntity.builder()
-                                            .dayOfWeek(operatingHour.dayOfWeek())
-                                            .startTime(operatingHour.start())
-                                            .endTime(operatingHour.end())
-                                            .theaterId(theaterId)
-                                            .build()
-                            ).toList();
+                            .map(dto -> operatingHoursMapper.toEntity(dto, theaterId))
+                            .toList();
 
                     return operatingHoursRepository.saveAll(operatingHours);
                 })
-                .map(oH -> new OperatingHoursInfoResponseDto(
-                        oH.getId(),
-                        oH.getDayOfWeek(),
-                        oH.getStartTime(),
-                        oH.getEndTime()
-                ))
+                .map(operatingHoursMapper::toInfoResponseDto)
                 .as(transactionalOperator::transactional)
-                .doOnError(e -> log.error("Failed to save operating hours: {}", e.getMessage()))
+                .doOnError(e -> log.error("Failed to save operating hours for theater {}: {}", theaterId, e.getMessage()))
                 .onErrorMap(
                         e -> !(e instanceof CinemaException),
                         e -> new CinemaException("DB error during save", TECHNICAL_ERROR)
@@ -100,21 +83,12 @@ public class OperatingHoursServiceImpl implements OperatingHoursService {
                         CinemaExceptionTypes.BAD_REQUEST
                 )))
                 .flatMap(oH -> {
-                            oH.setDayOfWeek(operatingHoursInfo.dayOfWeek());
-                            oH.setStartTime(operatingHoursInfo.start());
-                            oH.setEndTime(operatingHoursInfo.end());
-
-                            return operatingHoursRepository.save(oH);
-                        }
-                )
-                .map(oH -> new OperatingHoursInfoResponseDto(
-                        oH.getId(),
-                        oH.getDayOfWeek(),
-                        oH.getStartTime(),
-                        oH.getEndTime()
-                ))
+                    operatingHoursMapper.updateEntityFromDto(operatingHoursInfo, oH);
+                    return operatingHoursRepository.save(oH);
+                })
+                .map(operatingHoursMapper::toInfoResponseDto)
                 .as(transactionalOperator::transactional)
-                .doOnError(e -> log.error("Failed to update operating hours: {}", e.getMessage()))
+                .doOnError(e -> log.error("Failed to update operating hours {}: {}", operatingHoursId, e.getMessage()))
                 .onErrorMap(
                         e -> !(e instanceof CinemaException),
                         e -> new CinemaException("DB error during update", TECHNICAL_ERROR)
@@ -126,11 +100,12 @@ public class OperatingHoursServiceImpl implements OperatingHoursService {
         return operatingHoursRepository
                 .deleteById(operatingHoursId)
                 .as(transactionalOperator::transactional)
-                .doOnError(e -> log.error("Failed to update operating hours: {}", e.getMessage()))
+                .doOnError(e ->
+                        log.error("Failed to delete operating hours {}: {}", operatingHoursId, e.getMessage())
+                )
                 .onErrorMap(
                         e -> !(e instanceof CinemaException),
-                        e -> new CinemaException("DB error during update", TECHNICAL_ERROR)
+                        e -> new CinemaException("DB error during delete", TECHNICAL_ERROR)
                 );
     }
-
 }

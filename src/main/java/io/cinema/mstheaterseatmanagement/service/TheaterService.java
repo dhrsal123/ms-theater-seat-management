@@ -1,7 +1,6 @@
 package io.cinema.mstheaterseatmanagement.service;
 
 import io.cinema.mstheaterseatmanagement.domain.dto.request.TheaterRequestDto;
-import io.cinema.mstheaterseatmanagement.domain.dto.request.UpdateTheaterRequestDto;
 import io.cinema.mstheaterseatmanagement.domain.dto.response.TheaterResponseDto;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -16,7 +15,10 @@ public interface TheaterService {
 
     Mono<TheaterResponseDto> createTheater(TheaterRequestDto theaterRequestDto);
 
-    Mono<TheaterResponseDto> updateTheater(UpdateTheaterRequestDto theaterRequestDto);
+    Mono<TheaterResponseDto> updateTheater(
+            UUID theaterId,
+            TheaterRequestDto theaterRequestDto
+    );
 
     Mono<Void> deleteTheater(UUID theaterId);
 }
