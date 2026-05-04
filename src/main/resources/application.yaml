@@ -53,8 +53,14 @@ security:
         - "OPTIONS"
 
 springdoc:
+  api-docs:
+    enabled: true
+
+  packages-to-scan: "io.cinema.empty" # Skip auto generated docs
+
   swagger-ui:
     path: /swagger
+    url: /openapi.yaml
 
 management:
   endpoints:
