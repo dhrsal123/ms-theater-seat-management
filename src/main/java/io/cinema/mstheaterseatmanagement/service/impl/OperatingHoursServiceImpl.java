@@ -4,7 +4,7 @@ import io.cinema.domain.enumerated.CinemaExceptionTypes;
 import io.cinema.domain.exceptions.CinemaException;
 import io.cinema.mstheaterseatmanagement.domain.dto.request.OperatingHoursRequestDto;
 import io.cinema.mstheaterseatmanagement.domain.dto.response.OperatingHoursInfoResponseDto;
-import io.cinema.mstheaterseatmanagement.domain.entity.OperatingHoursEntity;
+import io.cinema.mstheaterseatmanagement.mapper.OperatingHoursMapper;
 import io.cinema.mstheaterseatmanagement.repository.OperatingHoursRepository;
 import io.cinema.mstheaterseatmanagement.repository.TheaterRepository;
 import io.cinema.mstheaterseatmanagement.service.OperatingHoursService;
@@ -15,8 +15,10 @@ import org.springframework.transaction.reactive.TransactionalOperator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.UUID;
 
+import static io.cinema.domain.enumerated.CinemaExceptionTypes.BAD_REQUEST;
 import static io.cinema.domain.enumerated.CinemaExceptionTypes.TECHNICAL_ERROR;
 
 @Slf4j
@@ -26,20 +28,15 @@ public class OperatingHoursServiceImpl implements OperatingHoursService {
     private final TheaterRepository theaterRepository;
     private final TransactionalOperator transactionalOperator;
     private final OperatingHoursRepository operatingHoursRepository;
+    private final OperatingHoursMapper operatingHoursMapper;
 
     @Override
     public Flux<OperatingHoursInfoResponseDto> getTheaterOperatingHours(UUID theaterId) {
         return operatingHoursRepository
                 .findOperatingHoursByTheaterId(theaterId)
-                .map(oH ->
-                        new OperatingHoursInfoResponseDto(
-                                oH.getId(),
-                                oH.getDayOfWeek(),
-                                oH.getStartTime(),
-                                oH.getEndTime()
-                        )
-                ).as(transactionalOperator::transactional)
-                .doOnError(e -> log.error("Failed to find operating hours: {}", e.getMessage()))
+                .map(operatingHoursMapper::toInfoResponseDto)
+                .as(transactionalOperator::transactional)
+                .doOnError(e -> log.error("Failed to find operating hours for theater: {}: {}", theaterId, e.getMessage()))
                 .onErrorMap(
                         e -> !(e instanceof CinemaException),
                         e -> new CinemaException("DB error during read", TECHNICAL_ERROR)
@@ -47,11 +44,10 @@ public class OperatingHoursServiceImpl implements OperatingHoursService {
     }
 
     @Override
-    public Mono<OperatingHoursInfoResponseDto> saveTheaterOperatingHours(
+    public Flux<OperatingHoursInfoResponseDto> saveTheaterOperatingHours(
             UUID theaterId,
-            OperatingHoursRequestDto operatingHoursRequest
+            List<OperatingHoursRequestDto> operatingHoursRequest
     ) {
-
         return theaterRepository
                 .findById(theaterId)
                 .switchIfEmpty(Mono.error(
@@ -60,57 +56,37 @@ public class OperatingHoursServiceImpl implements OperatingHoursService {
                                 CinemaExceptionTypes.BAD_REQUEST
                         )
                 ))
-                .flatMap(theater -> {
-                    var operatingHours = OperatingHoursEntity.builder()
-                            .dayOfWeek(operatingHoursRequest.dayOfWeek())
-                            .startTime(operatingHoursRequest.start())
-                            .endTime(operatingHoursRequest.end())
-                            .theaterId(theaterId)
-                            .build();
+                .flatMapMany(theater -> {
+                    var operatingHours = operatingHoursRequest.stream()
+                            .map(dto -> operatingHoursMapper.toEntity(dto, theaterId))
+                            .toList();
 
-                    return operatingHoursRepository.save(operatingHours);
+                    return operatingHoursRepository.saveAll(operatingHours);
                 })
-                .map(oH -> new OperatingHoursInfoResponseDto(
-                        oH.getId(),
-                        oH.getDayOfWeek(),
-                        oH.getStartTime(),
-                        oH.getEndTime()
-                ))
+                .map(operatingHoursMapper::toInfoResponseDto)
                 .as(transactionalOperator::transactional)
-                .doOnError(e -> log.error("Failed to find operating hours: {}", e.getMessage()))
+                .doOnError(e -> log.error("Failed to save operating hours for theater {}: {}", theaterId, e.getMessage()))
                 .onErrorMap(
                         e -> !(e instanceof CinemaException),
-                        e -> new CinemaException("DB error during read", TECHNICAL_ERROR)
+                        e -> new CinemaException("DB error during save", TECHNICAL_ERROR)
                 );
     }
 
     @Override
     public Mono<OperatingHoursInfoResponseDto> updateOperatingHours(
+            UUID theaterId,
             UUID operatingHoursId,
             OperatingHoursRequestDto operatingHoursInfo
     ) {
-        return operatingHoursRepository
-                .findById(operatingHoursId)
-                .switchIfEmpty(Mono.error(new CinemaException(
-                        "The operating hour was not found.",
-                        CinemaExceptionTypes.BAD_REQUEST
-                )))
+        return validateOperatingHoursBelongsToTheater(theaterId, operatingHoursId)
+                .then(operatingHoursRepository.findById(operatingHoursId))
                 .flatMap(oH -> {
-                            oH.setDayOfWeek(operatingHoursInfo.dayOfWeek());
-                            oH.setStartTime(operatingHoursInfo.start());
-                            oH.setEndTime(operatingHoursInfo.end());
-
-                            return operatingHoursRepository.save(oH);
-                        }
-                )
-                .map(oH -> new OperatingHoursInfoResponseDto(
-                        oH.getId(),
-                        oH.getDayOfWeek(),
-                        oH.getStartTime(),
-                        oH.getEndTime()
-                ))
+                    operatingHoursMapper.updateEntityFromDto(operatingHoursInfo, oH);
+                    return operatingHoursRepository.save(oH);
+                })
+                .map(operatingHoursMapper::toInfoResponseDto)
                 .as(transactionalOperator::transactional)
-                .doOnError(e -> log.error("Failed to update operating hours: {}", e.getMessage()))
+                .doOnError(e -> log.error("Failed to update operating hours {}: {}", operatingHoursId, e.getMessage()))
                 .onErrorMap(
                         e -> !(e instanceof CinemaException),
                         e -> new CinemaException("DB error during update", TECHNICAL_ERROR)
@@ -118,15 +94,33 @@ public class OperatingHoursServiceImpl implements OperatingHoursService {
     }
 
     @Override
-    public Mono<Void> deleteOperatingHours(UUID operatingHoursId) {
-        return operatingHoursRepository
-                .deleteById(operatingHoursId)
+    public Mono<Void> deleteOperatingHours(
+            UUID theaterId,
+            UUID operatingHoursId
+    ) {
+        return validateOperatingHoursBelongsToTheater(theaterId, operatingHoursId)
+                .then(operatingHoursRepository.deleteById(operatingHoursId))
                 .as(transactionalOperator::transactional)
-                .doOnError(e -> log.error("Failed to update operating hours: {}", e.getMessage()))
+                .doOnError(e ->
+                        log.error("Failed to delete operating hours {}: {}", operatingHoursId, e.getMessage())
+                )
                 .onErrorMap(
                         e -> !(e instanceof CinemaException),
-                        e -> new CinemaException("DB error during update", TECHNICAL_ERROR)
+                        e -> new CinemaException("DB error during delete", TECHNICAL_ERROR)
                 );
     }
 
+    private Mono<Void> validateOperatingHoursBelongsToTheater(UUID theaterId, UUID operatingHoursId) {
+        return operatingHoursRepository.findById(operatingHoursId)
+                .switchIfEmpty(Mono.error(new CinemaException("Operating hour not found", BAD_REQUEST)))
+                .flatMap(operatingHoursEntity -> {
+                    if (!operatingHoursEntity.getTheaterId().equals(theaterId)) {
+                        return Mono.error(new CinemaException(
+                                "Operating hours specified does not belong to the specified theater",
+                                BAD_REQUEST
+                        ));
+                    }
+                    return Mono.empty();
+                });
+    }
 }

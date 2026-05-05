@@ -1,32 +1,36 @@
 package io.cinema.mstheaterseatmanagement.domain.entity;
 
 import io.cinema.domain.entity.AuditableEntity;
+import io.cinema.mstheaterseatmanagement.domain.enumerated.SeatStatus;
+import io.cinema.mstheaterseatmanagement.domain.enumerated.SeatTypes;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 import java.util.UUID;
 
 @Getter
 @Setter
-@Table("theater")
+@Table("seat")
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder(toBuilder = true)
-public class TheaterEntity extends AuditableEntity {
+public class SeatEntity extends AuditableEntity {
     @Id
     private UUID id;
 
-    private String name;
-    private String email;
-    private String phone;
+    private Double priceIncrement;
 
-    @Column("address_id")
-    private UUID addressId;
+    private Integer rowNumber;
+    private Integer colNumber;
+
+    private SeatStatus seatStatus;
+    private SeatTypes seatType;
+
+    private UUID roomId;
 
 }

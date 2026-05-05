@@ -2,7 +2,6 @@ package io.cinema.mstheaterseatmanagement.controller;
 
 import io.cinema.domain.annotations.HasManagerRole;
 import io.cinema.mstheaterseatmanagement.domain.dto.request.TheaterRequestDto;
-import io.cinema.mstheaterseatmanagement.domain.dto.request.UpdateTheaterRequestDto;
 import io.cinema.mstheaterseatmanagement.domain.dto.response.TheaterResponseDto;
 import io.cinema.mstheaterseatmanagement.service.TheaterService;
 import jakarta.validation.Valid;
@@ -29,18 +28,18 @@ import java.util.UUID;
 @Validated
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/theater")
+@RequestMapping("/api/v1/theaters")
 public class TheaterController {
 
     private final TheaterService theaterService;
 
     //    @Cacheable(cacheNames = CachingConfig.THEATERS_CACHE)
     @GetMapping(params = {"page", "size"})
-    public ResponseEntity<Flux<TheaterResponseDto>> getAllTheaters(
+    public Flux<TheaterResponseDto> getAllTheaters(
             @RequestParam("page") int page,
             @RequestParam("size") int size
     ) {
-        return ResponseEntity.ok(theaterService.getAllTheaters(page, size));
+        return theaterService.getAllTheaters(page, size);
     }
 
     @GetMapping("/{theaterId}")
@@ -58,11 +57,12 @@ public class TheaterController {
     }
 
     @HasManagerRole
-    @PutMapping
+    @PutMapping("/{theaterId}")
     public Mono<ResponseEntity<TheaterResponseDto>> updateTheater(
-            @RequestBody @Valid UpdateTheaterRequestDto theater
+            @PathVariable @NotNull UUID theaterId,
+            @RequestBody @Valid TheaterRequestDto theater
     ) {
-        return theaterService.updateTheater(theater)
+        return theaterService.updateTheater(theaterId, theater)
                 .map(ResponseEntity::ok);
     }
 

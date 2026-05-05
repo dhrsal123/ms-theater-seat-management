@@ -1,0 +1,909 @@
+openapi: 3.1.0
+info:
+  title: Theater Seat Management API
+  description: Microservice for managing cinema theaters, operating hours, rooms, and seat configurations.
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@cinema.io
+
+servers:
+  - url: http://localhost:8082
+    description: Local Development Server
+
+tags:
+  - name: Theaters
+    description: Operations related to theater management.
+  - name: Operating Hours
+    description: Operations related to configuring theater schedules.
+  - name: Rooms
+    description: Operations related to physical rooms within a theater.
+  - name: Seats
+    description: Operations related to specific seat configurations and mappings.
+
+paths:
+  /api/v1/theaters:
+    get:
+      tags:
+        - Theaters
+      summary: Get all theaters
+      description: Retrieves a paginated list of all available theaters in the system.
+      operationId: getAllTheaters
+      parameters:
+        - name: page
+          in: query
+          description: The page number to retrieve (zero-based).
+          required: true
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          description: The number of records per page.
+          required: true
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: Successfully retrieved the list of theaters.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TheaterResponseDto"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    post:
+      tags:
+        - Theaters
+      summary: Create a new theater
+      description: Creates a new theater entity along with its address and operating hours. Requires Manager role.
+      operationId: createTheater
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Theater details payload.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TheaterRequestDto"
+      responses:
+        "201":
+          description: Theater created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TheaterResponseDto"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/theaters/{theaterId}:
+    get:
+      tags:
+        - Theaters
+      summary: Get theater details
+      description: Retrieves the details of a specific theater by its UUID.
+      operationId: getTheaterById
+      parameters:
+        - $ref: "#/components/parameters/TheaterIdPath"
+      responses:
+        "200":
+          description: Successfully retrieved theater details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TheaterResponseDto"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    put:
+      tags:
+        - Theaters
+      summary: Update a theater
+      description: Updates the details of an existing theater. Requires Manager role.
+      operationId: updateTheater
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TheaterIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TheaterRequestDto"
+      responses:
+        "200":
+          description: Theater updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TheaterResponseDto"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    delete:
+      tags:
+        - Theaters
+      summary: Delete a theater
+      description: Deletes a theater from the system by its UUID along with its cascading dependencies. Requires Manager role.
+      operationId: deleteTheater
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TheaterIdPath"
+      responses:
+        "204":
+          description: Theater deleted successfully.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/theaters/{theaterId}/operating-hours:
+    get:
+      tags:
+        - Operating Hours
+      summary: Get operating hours
+      description: Retrieves all configured operating hours for a specific theater.
+      operationId: getTheaterOperatingHours
+      parameters:
+        - $ref: "#/components/parameters/TheaterIdPath"
+      responses:
+        "200":
+          description: Successfully retrieved operating hours.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OperatingHoursInfoResponseDto"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    post:
+      tags:
+        - Operating Hours
+      summary: Save operating hours
+      description: Bulk creates or updates operating hours for a theater. Requires Manager role.
+      operationId: saveTheaterOperatingHours
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TheaterIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/OperatingHoursRequestDto"
+      responses:
+        "201":
+          description: Operating hours saved successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OperatingHoursInfoResponseDto"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/theaters/{theaterId}/operating-hours/{operatingHoursId}:
+    put:
+      tags:
+        - Operating Hours
+      summary: Update specific operating hours
+      description: Updates a specific operating hour entry by ID. Requires Manager role.
+      operationId: updateOperatingHours
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TheaterIdPath"
+        - $ref: "#/components/parameters/OperatingHoursIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OperatingHoursRequestDto"
+      responses:
+        "200":
+          description: Operating hours updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatingHoursInfoResponseDto"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    delete:
+      tags:
+        - Operating Hours
+      summary: Delete operating hours
+      description: Deletes a specific operating hour entry. Requires Manager role.
+      operationId: deleteOperatingHours
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TheaterIdPath"
+        - $ref: "#/components/parameters/OperatingHoursIdPath"
+      responses:
+        "204":
+          description: Operating hours deleted successfully.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/theaters/{theaterId}/rooms:
+    get:
+      tags:
+        - Rooms
+      summary: Get all rooms
+      description: Retrieves all rooms associated with a specific theater.
+      operationId: getAllRooms
+      parameters:
+        - $ref: "#/components/parameters/TheaterIdPath"
+      responses:
+        "200":
+          description: Successfully retrieved rooms.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RoomResponseDto"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    post:
+      tags:
+        - Rooms
+      summary: Create rooms
+      description: Bulk creates new rooms for a theater. Requires Manager role.
+      operationId: saveRooms
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TheaterIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/RoomRequestDto"
+      responses:
+        "201":
+          description: Rooms created successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RoomResponseDto"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/theaters/{theaterId}/rooms/{roomId}:
+    put:
+      tags:
+        - Rooms
+      summary: Update a room
+      description: Updates the details of a specific room. Requires Manager role.
+      operationId: updateRoom
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TheaterIdPath"
+        - $ref: "#/components/parameters/RoomIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoomRequestDto"
+      responses:
+        "200":
+          description: Room updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoomResponseDto"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    delete:
+      tags:
+        - Rooms
+      summary: Delete a room
+      description: Deletes a specific room and its configured seats from a theater. Requires Manager role.
+      operationId: deleteRoom
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TheaterIdPath"
+        - $ref: "#/components/parameters/RoomIdPath"
+      responses:
+        "204":
+          description: Room deleted successfully.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/theaters/{theaterId}/seats:
+    get:
+      tags:
+        - Seats
+      summary: Get all seats
+      description: Retrieves all seats configured for a specific room within a theater.
+      operationId: getAllSeats
+      parameters:
+        - $ref: "#/components/parameters/TheaterIdPath"
+        - name: roomId
+          in: query
+          required: true
+          description: The UUID of the room to fetch seats for.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Successfully retrieved seats.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SeatResponseDto"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    post:
+      tags:
+        - Seats
+      summary: Create seats
+      description: Bulk creates new seats for a room. Requires Manager role.
+      operationId: createSeats
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TheaterIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/SeatRequestDto"
+      responses:
+        "201":
+          description: Seats created successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SeatResponseDto"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/theaters/{theaterId}/seats/{seatId}:
+    put:
+      tags:
+        - Seats
+      summary: Update a seat
+      description: Updates the status or details of a specific seat. Requires Manager role.
+      operationId: updateSeat
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TheaterIdPath"
+        - $ref: "#/components/parameters/SeatIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SeatRequestDto"
+      responses:
+        "200":
+          description: Seat updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SeatResponseDto"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    delete:
+      tags:
+        - Seats
+      summary: Delete a seat
+      description: Deletes a specific seat. Requires Manager role.
+      operationId: deleteSeat
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TheaterIdPath"
+        - $ref: "#/components/parameters/SeatIdPath"
+      responses:
+        "204":
+          description: Seat deleted successfully.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Provide the JWT token issued by Keycloak to access Manager endpoints.
+
+  parameters:
+    TheaterIdPath:
+      name: theaterId
+      in: path
+      required: true
+      description: The unique identifier (UUID) of the theater.
+      schema:
+        type: string
+        format: uuid
+    OperatingHoursIdPath:
+      name: operatingHoursId
+      in: path
+      required: true
+      description: The unique identifier (UUID) of the operating hours entry.
+      schema:
+        type: string
+        format: uuid
+    RoomIdPath:
+      name: roomId
+      in: path
+      required: true
+      description: The unique identifier (UUID) of the room.
+      schema:
+        type: string
+        format: uuid
+    SeatIdPath:
+      name: seatId
+      in: path
+      required: true
+      description: The unique identifier (UUID) of the seat.
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    BadRequest:
+      description: Bad Request. Occurs when validation fails or business rules are violated (e.g., Room does not belong to the theater).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BaseErrorDto"
+          example:
+            message: "Petición Invalida. Entidad no encontrada o campos no válidos."
+            code: "CINEMA-001"
+            status: "BAD_REQUEST"
+
+    Unauthorized:
+      description: Unauthorized. Authentication is missing or invalid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BaseErrorDto"
+          example:
+            message: "Unauthorized."
+            code: "CINEMA-005"
+            status: "UNAUTHORIZED"
+
+    Forbidden:
+      description: Forbidden. Authenticated user lacks required authorities (e.g., Manager role missing).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BaseErrorDto"
+          example:
+            message: "Forbidden. Access Denied."
+            code: "CINEMA-004"
+            status: "FORBIDDEN"
+
+    NotFound:
+      description: Not Found. The requested resource does not exist (Maps to BAD_REQUEST in custom logic for business entity lookups).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BaseErrorDto"
+          example:
+            message: "The requested theater, room, or seat could not be found."
+            code: "CINEMA-001"
+            status: "BAD_REQUEST"
+
+    Conflict:
+      description: Conflict. The request could not be completed due to a conflict with the current state of the resource.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BaseErrorDto"
+          example:
+            message: "Business Error. Conflict in data."
+            code: "CINEMA-003"
+            status: "CONFLICT"
+
+    PreconditionFailed:
+      description: Precondition Failed. Business logic validation failed.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BaseErrorDto"
+          example:
+            message: "El usuario ya existe."
+            code: "CINEMA-006"
+            status: "PRECONDITION_FAILED"
+
+    InternalServerError:
+      description: Internal Server Error. Raised directly by generic Exceptions or Database transaction failures.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BaseErrorDto"
+          examples:
+            TechnicalError:
+              summary: Custom DB/Technical Exception
+              value:
+                message: "DB error during update"
+                code: "CINEMA-002"
+                status: "INTERNAL_SERVER_ERROR"
+            UnknownError:
+              summary: Generic Unhandled Exception
+              value:
+                message: "An unexpected error occurred"
+                code: "UNKNOWN"
+                status: "INTERNAL_SERVER_ERROR"
+
+  schemas:
+    BaseErrorDto:
+      description: Standardized error payload handled by ExceptionHandlers and generated from CinemaExceptionTypes.
+      type: object
+      properties:
+        message:
+          type: string
+          description: A specific message describing the nature of the error.
+        code:
+          type: string
+          description: A predefined internal code string representing the type of error.
+        status:
+          type: string
+          description: String representation of the Spring HttpStatus enum.
+      required:
+        - message
+        - code
+        - status
+
+    AddressRequestDto:
+      type: object
+      properties:
+        street:
+          type: string
+          maxLength: 255
+          example: "123 Main Street"
+        city:
+          type: string
+          maxLength: 100
+          example: "Metropolis"
+        state:
+          type: string
+          maxLength: 100
+          example: "NY"
+        country:
+          type: string
+          maxLength: 100
+          example: "USA"
+        zip:
+          type: string
+          maxLength: 20
+          example: "10001"
+      required:
+        - city
+        - country
+        - state
+        - street
+        - zip
+
+    OperatingHoursRequestDto:
+      type: object
+      properties:
+        dayOfWeek:
+          type: string
+          enum: [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
+          example: "MONDAY"
+        start:
+          type: string
+          pattern: "^(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d$"
+          example: "09:00:00"
+        end:
+          type: string
+          pattern: "^(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d$"
+          example: "23:00:00"
+      required:
+        - dayOfWeek
+        - start
+        - end
+
+    TheaterRequestDto:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          example: "Grand Cinema Central"
+        phone:
+          type: string
+          maxLength: 13
+          minLength: 10
+          pattern: "^\\+?\\d{10,12}$"
+          example: "+1234567890"
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          example: "contact@grandcinema.com"
+        address:
+          $ref: "#/components/schemas/AddressRequestDto"
+        operatingHours:
+          type: array
+          items:
+            $ref: "#/components/schemas/OperatingHoursRequestDto"
+      required:
+        - name
+        - email
+        - address
+        - operatingHours
+
+    OperatingHoursResponseDto:
+      type: object
+      properties:
+        dayOfWeek:
+          type: string
+          enum: [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
+          example: "MONDAY"
+        start:
+          type: string
+          example: "09:00:00"
+        end:
+          type: string
+          example: "23:00:00"
+
+    TheaterResponseDto:
+      type: object
+      properties:
+        theaterId:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        name:
+          type: string
+          example: "Grand Cinema Central"
+        email:
+          type: string
+          example: "contact@grandcinema.com"
+        phone:
+          type: string
+          example: "+1234567890"
+        location:
+          type: string
+          example: "123 Main Street, Metropolis, NY, USA, 10001"
+        operatingHours:
+          type: array
+          items:
+            $ref: "#/components/schemas/OperatingHoursResponseDto"
+
+    SeatRequestDto:
+      type: object
+      properties:
+        priceIncrement:
+          type: number
+          format: double
+          example: 5.50
+        rowNumber:
+          type: integer
+          format: int32
+          example: 12
+        colNumber:
+          type: integer
+          format: int32
+          example: 5
+        seatStatus:
+          type: string
+          enum: [OPERATIONAL, UNDER_MAINTENANCE]
+          example: "OPERATIONAL"
+        seatType:
+          type: string
+          enum: [STANDARD, PREMIUM, COUPLE_SEAT, WHEELCHAIR_ACCESSIBLE, COMPANION, EASY_ACCESS]
+          example: "PREMIUM"
+        roomId:
+          type: string
+          format: uuid
+          example: "987e6543-e21b-34d5-c678-426614174111"
+      required:
+        - priceIncrement
+        - rowNumber
+        - colNumber
+        - seatStatus
+        - seatType
+        - roomId
+
+    SeatResponseDto:
+      type: object
+      properties:
+        seatId:
+          type: string
+          format: uuid
+          example: "555e1234-e89b-12d3-a456-426614174555"
+        priceIncrement:
+          type: number
+          format: double
+        rowNumber:
+          type: integer
+          format: int32
+        colNumber:
+          type: integer
+          format: int32
+        seatStatus:
+          type: string
+          enum: [OPERATIONAL, UNDER_MAINTENANCE]
+        seatType:
+          type: string
+          enum: [STANDARD, PREMIUM, COUPLE_SEAT, WHEELCHAIR_ACCESSIBLE, COMPANION, EASY_ACCESS]
+        roomId:
+          type: string
+          format: uuid
+
+    RoomRequestDto:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "IMAX Screen 1"
+      required:
+        - name
+
+    RoomResponseDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        theaterId:
+          type: string
+          format: uuid
+
+    OperatingHoursInfoResponseDto:
+      type: object
+      properties:
+        operatingHoursId:
+          type: string
+          format: uuid
+        dayOfWeek:
+          type: string
+          enum: [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
+        start:
+          type: string
+        end:
+          type: string

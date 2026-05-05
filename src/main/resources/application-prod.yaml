@@ -1,6 +1,7 @@
 spring:
   application:
     name: ms-theater-seat-management
+
   security:
     oauth2:
       resourceserver:
@@ -8,13 +9,15 @@ spring:
           issuer-uri: http://${KEYCLOAK_HOST}:8000/auth/realms/cinema-system
 
   datasource:
-
     driver-class-name: org.postgresql.Driver
 
   r2dbc:
     url: r2dbc:postgresql://${POSTGRES_HOST}:5432/${POSTGRES_DB}
     username: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
+    pool:
+      initial-size: 10
+      max-size: 50
 
   liquibase:
     url: jdbc:postgresql://${POSTGRES_HOST}:5432/${POSTGRES_DB}
@@ -27,12 +30,15 @@ spring:
       host: ${REDIS_HOST}
       password: ${REDIS_PASSWORD}
 
-
 server:
   port: 8082
+  shutdown: graceful
+
 logging:
   level:
     root: info
+    org.springframework.web: warn
+    io.r2dbc.postgresql: warn
   pattern:
     correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
 
@@ -42,7 +48,7 @@ security:
       jwk-set-uri: http://${KEYCLOAK_HOST}:8000/auth/realms/cinema-system/protocol/openid-connect/certs
     cors:
       allowed-origins:
-        - "*"
+        - ${FRONTEND_PROD_URL}
       allowed-headers:
         - "*"
       allowed-methods:
@@ -54,18 +60,20 @@ security:
 
 springdoc:
   api-docs:
-    enabled: true
-
-  packages-to-scan: "io.cinema.empty" # Skip auto generated docs
-
+    enabled: false
   swagger-ui:
-    path: /swagger
-    url: /openapi.yaml
+    enabled: false
 
 management:
   endpoints:
     web:
-      base-path: "/"
+      base-path: "/actuator"
+      exposure:
+        include: "health,prometheus"
+
+  endpoint:
+    health:
+      show-details: when_authorized
 
   opentelemetry:
     logging:
@@ -74,5 +82,4 @@ management:
           endpoint: http://${LOKI_HOST}:4318/v1/logs
   tracing:
     sampling:
-      probability: 1.0
-
+      probability: 0.1
