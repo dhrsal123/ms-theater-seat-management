@@ -18,6 +18,7 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 import java.util.UUID;
 
+import static io.cinema.domain.enumerated.CinemaExceptionTypes.BAD_REQUEST;
 import static io.cinema.domain.enumerated.CinemaExceptionTypes.TECHNICAL_ERROR;
 
 @Slf4j
@@ -73,15 +74,12 @@ public class OperatingHoursServiceImpl implements OperatingHoursService {
 
     @Override
     public Mono<OperatingHoursInfoResponseDto> updateOperatingHours(
+            UUID theaterId,
             UUID operatingHoursId,
             OperatingHoursRequestDto operatingHoursInfo
     ) {
-        return operatingHoursRepository
-                .findById(operatingHoursId)
-                .switchIfEmpty(Mono.error(new CinemaException(
-                        "The operating hour was not found.",
-                        CinemaExceptionTypes.BAD_REQUEST
-                )))
+        return validateOperatingHoursBelongsToTheater(theaterId, operatingHoursId)
+                .then(operatingHoursRepository.findById(operatingHoursId))
                 .flatMap(oH -> {
                     operatingHoursMapper.updateEntityFromDto(operatingHoursInfo, oH);
                     return operatingHoursRepository.save(oH);
@@ -96,9 +94,12 @@ public class OperatingHoursServiceImpl implements OperatingHoursService {
     }
 
     @Override
-    public Mono<Void> deleteOperatingHours(UUID operatingHoursId) {
-        return operatingHoursRepository
-                .deleteById(operatingHoursId)
+    public Mono<Void> deleteOperatingHours(
+            UUID theaterId,
+            UUID operatingHoursId
+    ) {
+        return validateOperatingHoursBelongsToTheater(theaterId, operatingHoursId)
+                .then(operatingHoursRepository.deleteById(operatingHoursId))
                 .as(transactionalOperator::transactional)
                 .doOnError(e ->
                         log.error("Failed to delete operating hours {}: {}", operatingHoursId, e.getMessage())
@@ -107,5 +108,19 @@ public class OperatingHoursServiceImpl implements OperatingHoursService {
                         e -> !(e instanceof CinemaException),
                         e -> new CinemaException("DB error during delete", TECHNICAL_ERROR)
                 );
+    }
+
+    private Mono<Void> validateOperatingHoursBelongsToTheater(UUID theaterId, UUID operatingHoursId) {
+        return operatingHoursRepository.findById(operatingHoursId)
+                .switchIfEmpty(Mono.error(new CinemaException("Operating hour not found", BAD_REQUEST)))
+                .flatMap(operatingHoursEntity -> {
+                    if (!operatingHoursEntity.getTheaterId().equals(theaterId)) {
+                        return Mono.error(new CinemaException(
+                                "Operating hours specified does not belong to the specified theater",
+                                BAD_REQUEST
+                        ));
+                    }
+                    return Mono.empty();
+                });
     }
 }

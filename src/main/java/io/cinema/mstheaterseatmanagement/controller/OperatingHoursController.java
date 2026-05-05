@@ -43,7 +43,7 @@ public class OperatingHoursController {
     @HasManagerRole
     @PostMapping
     public Flux<OperatingHoursInfoResponseDto> saveTheaterOperatingHours(
-            @PathVariable @NotNull UUID theaterId,
+            @PathVariable @NotNull(message = "The theater id must be valid.") UUID theaterId,
             @Valid @RequestBody List<OperatingHoursRequestDto> operatingHoursInfo
     ) {
         return operatingHoursService.saveTheaterOperatingHours(theaterId, operatingHoursInfo);
@@ -52,10 +52,12 @@ public class OperatingHoursController {
     @HasManagerRole
     @PutMapping("/{operatingHoursId}")
     public Mono<ResponseEntity<OperatingHoursInfoResponseDto>> updateOperatingHours(
+            @PathVariable @NotNull(message = "The theater id must be valid.") UUID theaterId,
             @PathVariable @NotNull(message = "The operating hours id must be valid.") UUID operatingHoursId,
             @Valid @RequestBody OperatingHoursRequestDto operatingHoursInfo
     ) {
         return operatingHoursService.updateOperatingHours(
+                        theaterId,
                         operatingHoursId,
                         operatingHoursInfo
                 )
@@ -65,9 +67,13 @@ public class OperatingHoursController {
     @HasManagerRole
     @DeleteMapping("/{operatingHoursId}")
     public Mono<ResponseEntity<Void>> deleteOperatingHours(
+            @PathVariable @NotNull(message = "The theater id must be valid.") UUID theaterId,
             @PathVariable @NotNull UUID operatingHoursId
     ) {
-        return operatingHoursService.deleteOperatingHours(operatingHoursId)
+        return operatingHoursService.deleteOperatingHours(
+                        theaterId,
+                        operatingHoursId
+                )
                 .thenReturn(ResponseEntity.noContent().build());
     }
 

@@ -16,11 +16,11 @@ public interface OperatingHoursService {
             List<OperatingHoursRequestDto> operatingHoursRequest
     );
 
-
     Mono<OperatingHoursInfoResponseDto> updateOperatingHours(
+            UUID theaterId,
             UUID operatingHoursId,
             OperatingHoursRequestDto operatingHoursInfo
     );
 
-    Mono<Void> deleteOperatingHours(UUID operatingHoursId);
+    Mono<Void> deleteOperatingHours(UUID theaterId, UUID operatingHoursId);
 }
