@@ -31,7 +31,8 @@ class OperatingHoursControllerTest {
     @Test
     void shouldGetOperatingHours() {
         // given
-        var operatingHour = buildOperatingHoursInfoResponseDto();
+        var operatingHourId = UUID.randomUUID();
+        var operatingHour = buildOperatingHoursInfoResponseDto(operatingHourId);
 
         var operatingHours = Flux.just(operatingHour);
         var theaterId = UUID.randomUUID();
@@ -55,7 +56,8 @@ class OperatingHoursControllerTest {
     void shouldSaveOperatingHours() {
         // given
         var operatingHourRequest = buildOperatingHoursRequestDto();
-        var operatingHour = buildOperatingHoursInfoResponseDto();
+        var operatingHourId = UUID.randomUUID();
+        var operatingHour = buildOperatingHoursInfoResponseDto(operatingHourId);
         var operatingHours = Flux.just(operatingHour);
         var theaterId = UUID.randomUUID();
 
@@ -81,20 +83,21 @@ class OperatingHoursControllerTest {
         var operatingHoursRequest = buildOperatingHoursRequestDto();
         var operatingHourRequest = operatingHoursRequest.getFirst();
 
-        var operatingHour = buildOperatingHoursInfoResponseDto();
-        var operatingHoursId = operatingHour.operatingHoursId();
+        var operatingHourId = UUID.randomUUID();
+        var operatingHour = buildOperatingHoursInfoResponseDto(operatingHourId);
+
         var operatingHours = Mono.just(operatingHour);
         var theaterId = UUID.randomUUID();
 
         // when
-        when(operatingHoursService.updateOperatingHours(theaterId, operatingHoursId, operatingHourRequest))
+        when(operatingHoursService.updateOperatingHours(theaterId, operatingHourId, operatingHourRequest))
                 .thenReturn(operatingHours);
 
         // then
         webTestClient.put().uri(
                         "/api/v1/theaters/{theaterId}/operating-hours/{operatingHoursId}",
                         theaterId,
-                        operatingHoursId
+                        operatingHourId
                 )
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Mono.just(operatingHourRequest), OperatingHoursRequestDto.class)
@@ -103,7 +106,7 @@ class OperatingHoursControllerTest {
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
                 .expectBodyList(OperatingHoursInfoResponseDto.class).contains(operatingHour);
 
-        verify(operatingHoursService).updateOperatingHours(theaterId, operatingHoursId, operatingHourRequest);
+        verify(operatingHoursService).updateOperatingHours(theaterId, operatingHourId, operatingHourRequest);
     }
 
     @Test
