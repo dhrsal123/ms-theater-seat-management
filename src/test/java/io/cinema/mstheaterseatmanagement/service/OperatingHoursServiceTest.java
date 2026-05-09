@@ -24,11 +24,11 @@ import reactor.test.StepVerifier;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-import static io.cinema.mstheaterseatmanagement.factory.MockFactory.buildOperatingHoursEntity;
-import static io.cinema.mstheaterseatmanagement.factory.MockFactory.buildOperatingHoursInfoResponseDto;
-import static io.cinema.mstheaterseatmanagement.factory.MockFactory.buildOperatingHoursRequestDto;
-import static io.cinema.mstheaterseatmanagement.factory.MockFactory.buildTheaterEntity;
-import static io.cinema.mstheaterseatmanagement.factory.MockFactory.provideDatabaseErrors;
+import static io.cinema.mstheaterseatmanagement.factory.OperatingHoursMockFactory.buildOperatingHoursEntity;
+import static io.cinema.mstheaterseatmanagement.factory.OperatingHoursMockFactory.buildOperatingHoursInfoResponseDto;
+import static io.cinema.mstheaterseatmanagement.factory.OperatingHoursMockFactory.buildOperatingHoursRequestDto;
+import static io.cinema.mstheaterseatmanagement.factory.TheaterMockFactory.buildTheaterEntity;
+import static io.cinema.mstheaterseatmanagement.factory.TheaterMockFactory.provideDatabaseErrors;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyIterable;
 import static org.mockito.Mockito.mock;
@@ -47,6 +47,11 @@ class OperatingHoursServiceTest {
     private TransactionalOperator transactionalOperator;
     private OperatingHoursRepository operatingHoursRepository;
     private OperatingHoursService operatingHoursService;
+
+    // private methods
+    private static Stream<Arguments> provideDatabaseExceptions() {
+        return provideDatabaseErrors();
+    }
 
     @BeforeEach
     void setUp() {
@@ -150,7 +155,7 @@ class OperatingHoursServiceTest {
     }
 
     @Test
-    void shouldUpdateOperatingHours(){
+    void shouldUpdateOperatingHours() {
         var operatingHourId = UUID.randomUUID();
         var theaterId = UUID.randomUUID();
         var operatingHoursRequest = buildOperatingHoursRequestDto().getFirst();
@@ -198,7 +203,7 @@ class OperatingHoursServiceTest {
     }
 
     @Test
-    void shouldThrowExceptionWhenTheaterIdIsNotTheSameForUpdate(){
+    void shouldThrowExceptionWhenTheaterIdIsNotTheSameForUpdate() {
         var operatingHourId = UUID.randomUUID();
         var originalTheaterId = UUID.randomUUID();
         var operatingHoursRequest = buildOperatingHoursRequestDto().getFirst();
@@ -330,10 +335,5 @@ class OperatingHoursServiceTest {
                         error instanceof CinemaException && error.getMessage().equals(expectedMessage)
                 )
                 .verify();
-    }
-
-    // private methods
-    private static Stream<Arguments> provideDatabaseExceptions() {
-        return provideDatabaseErrors();
     }
 }
