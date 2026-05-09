@@ -3,6 +3,7 @@ package io.cinema.mstheaterseatmanagement.service.impl;
 import io.cinema.domain.exceptions.CinemaException;
 import io.cinema.mstheaterseatmanagement.domain.dto.request.RoomRequestDto;
 import io.cinema.mstheaterseatmanagement.domain.dto.response.RoomResponseDto;
+import io.cinema.mstheaterseatmanagement.domain.entity.RoomEntity;
 import io.cinema.mstheaterseatmanagement.mapper.RoomMapper;
 import io.cinema.mstheaterseatmanagement.repository.RoomRepository;
 import io.cinema.mstheaterseatmanagement.repository.SeatRepository;
@@ -66,9 +67,7 @@ public class RoomServiceImpl implements RoomService {
 
     @Override
     public Mono<RoomResponseDto> updateRoom(UUID theaterId, UUID roomId, RoomRequestDto roomRequestDto) {
-        return roomRepository
-                .findById(roomId)
-                .switchIfEmpty(Mono.error(new CinemaException("Room not found.", BAD_REQUEST)))
+        return getAndValidateRoomBelongsToTheater(theaterId, roomId)
                 .flatMap(room -> {
                     roomMapper.updateEntityFromDto(roomRequestDto, room);
                     return roomRepository.save(room)
@@ -84,12 +83,9 @@ public class RoomServiceImpl implements RoomService {
 
     @Override
     public Mono<Void> deleteRoom(UUID theaterId, UUID roomId) {
-        return roomRepository
-                .findById(roomId)
-                .switchIfEmpty(Mono.error(new CinemaException("Room not found.", BAD_REQUEST)))
+        return getAndValidateRoomBelongsToTheater(theaterId, roomId)
                 .flatMap(roomEntity ->
-                        seatRepository.findAllByRoomId(roomId)
-                                .flatMap(seatEntity -> seatRepository.deleteById(seatEntity.getId()))
+                        seatRepository.deleteAllByRoomId(roomId)
                                 .then(roomRepository.deleteById(roomId))
                 )
                 .as(transactionalOperator::transactional)
@@ -98,5 +94,20 @@ public class RoomServiceImpl implements RoomService {
                         e -> !(e instanceof CinemaException),
                         e -> new CinemaException("DB error during deletion", TECHNICAL_ERROR)
                 );
+    }
+
+    //private methods
+    private Mono<RoomEntity> getAndValidateRoomBelongsToTheater(UUID theaterId, UUID roomId) {
+        return roomRepository.findById(roomId)
+                .switchIfEmpty(Mono.error(new CinemaException("Room not found.", BAD_REQUEST)))
+                .flatMap(room -> {
+                    if (!room.getTheaterId().equals(theaterId)) {
+                        return Mono.error(new CinemaException(
+                                "Room does not belong to the specified theater",
+                                BAD_REQUEST
+                        ));
+                    }
+                    return Mono.just(room);
+                });
     }
 }
