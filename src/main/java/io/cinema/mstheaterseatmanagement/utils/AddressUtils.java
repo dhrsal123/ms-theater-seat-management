@@ -1,7 +1,6 @@
 package io.cinema.mstheaterseatmanagement.utils;
 
 import io.cinema.mstheaterseatmanagement.domain.entity.AddressEntity;
-import io.cinema.mstheaterseatmanagement.domain.entity.TheaterRowProjection;
 import lombok.experimental.UtilityClass;
 
 import java.util.Objects;
@@ -22,19 +21,6 @@ public class AddressUtils {
                 address.getState(),
                 address.getCountry(),
                 address.getZip()
-        );
-    }
-
-    public static String getAddress(TheaterRowProjection projection) {
-        if (projection == null) {
-            return "";
-        }
-        return toAddress(
-                projection.street(),
-                projection.city(),
-                projection.state(),
-                projection.country(),
-                projection.zip()
         );
     }
 

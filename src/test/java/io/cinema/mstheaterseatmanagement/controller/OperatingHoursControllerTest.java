@@ -12,8 +12,8 @@ import reactor.core.publisher.Mono;
 
 import java.util.UUID;
 
-import static io.cinema.mstheaterseatmanagement.factory.MockFactory.buildOperatingHoursInfoResponseDto;
-import static io.cinema.mstheaterseatmanagement.factory.MockFactory.buildOperatingHoursRequestDto;
+import static io.cinema.mstheaterseatmanagement.factory.OperatingHoursMockFactory.buildOperatingHoursInfoResponseDto;
+import static io.cinema.mstheaterseatmanagement.factory.OperatingHoursMockFactory.buildOperatingHoursRequestDto;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
