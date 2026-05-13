@@ -6,8 +6,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 
-import java.util.UUID;
-
 public record SeatRequestDto(
         @NotNull
         @PositiveOrZero(message = "The price increment must be greater than or equal to zero.")
@@ -25,10 +23,8 @@ public record SeatRequestDto(
         SeatStatus seatStatus,
 
         @NotNull(message = "The seat type must be valid.")
-        SeatTypes seatType,
+        SeatTypes seatType
 
-        @NotNull(message = "The room id must be valid.")
-        UUID roomId
 ) {
 
 }

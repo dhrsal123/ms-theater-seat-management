@@ -8,6 +8,8 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -17,7 +19,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -29,36 +30,40 @@ import java.util.UUID;
 @Validated
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/theaters/{theaterId}/seats")
+@RequestMapping("/api/v1/theaters/{theaterId}/rooms/{roomId}/seats")
 public class SeatController {
 
     private final SeatService seatService;
 
+    @Cacheable(value = "seats", key = "{#theaterId, #roomId}")
     @GetMapping
     public Flux<SeatResponseDto> getAllSeats(
             @PathVariable("theaterId") @NotNull UUID theaterId,
-            @RequestParam("roomId") @NotNull UUID roomId
+            @PathVariable("roomId") @NotNull UUID roomId
     ) {
         return seatService.getAllSeats(theaterId, roomId);
     }
 
     @HasManagerRole
+    @CacheEvict(value = "seats", allEntries = true)
     @PostMapping
     public Flux<SeatResponseDto> createSeats(
             @PathVariable("theaterId") @NotNull UUID theaterId,
+            @PathVariable("roomId") @NotNull(message = "The room id must be valid.") UUID roomId,
             @RequestBody @NotNull @Valid List<SeatRequestDto> seatRequestDto
     ) {
-        return seatService.createSeats(theaterId, seatRequestDto);
+        return seatService.createSeats(theaterId, roomId, seatRequestDto);
     }
 
     @HasManagerRole
     @PutMapping("/{seatId}")
     public Mono<ResponseEntity<SeatResponseDto>> updateSeat(
             @PathVariable("theaterId") @NotNull UUID theaterId,
+            @PathVariable("roomId") @NotNull(message = "The room id must be valid.") UUID roomId,
             @PathVariable("seatId") @NotNull UUID seatId,
             @RequestBody @NotNull @Valid SeatRequestDto seatRequestDto
     ) {
-        return seatService.updateSeat(theaterId, seatId, seatRequestDto)
+        return seatService.updateSeat(theaterId, roomId, seatId, seatRequestDto)
                 .map(ResponseEntity::ok);
     }
 
@@ -66,9 +71,10 @@ public class SeatController {
     @DeleteMapping("/{seatId}")
     public Mono<ResponseEntity<Void>> deleteSeat(
             @PathVariable("theaterId") @NotNull UUID theaterId,
+            @PathVariable("roomId") @NotNull(message = "The room id must be valid.") UUID roomId,
             @PathVariable("seatId") @NotNull UUID seatId
     ) {
-        return seatService.deleteSeat(theaterId, seatId)
+        return seatService.deleteSeat(theaterId, roomId, seatId)
                 .thenReturn(ResponseEntity.noContent().build());
     }
 }

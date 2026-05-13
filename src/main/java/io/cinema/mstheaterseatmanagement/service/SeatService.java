@@ -12,9 +12,9 @@ public interface SeatService {
 
     Flux<SeatResponseDto> getAllSeats(UUID theaterId, UUID roomId);
 
-    Flux<SeatResponseDto> createSeats(UUID theaterId, List<SeatRequestDto> seatRequestDtos);
+    Flux<SeatResponseDto> createSeats(UUID theaterId, UUID roomId, List<SeatRequestDto> seatRequestDtos);
 
-    Mono<SeatResponseDto> updateSeat(UUID theaterId, UUID seatId, SeatRequestDto seatRequestDto);
+    Mono<SeatResponseDto> updateSeat(UUID theaterId, UUID roomId, UUID seatId, SeatRequestDto seatRequestDto);
 
-    Mono<Void> deleteSeat(UUID theaterId, UUID seatId);
+    Mono<Void> deleteSeat(UUID theaterId, UUID roomId, UUID seatId);
 }
