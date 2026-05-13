@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -43,6 +44,7 @@ public class OperatingHoursController {
     }
 
     @HasManagerRole
+    @CacheEvict(value = "operating_hours", key = "#theaterId")
     @PostMapping
     public Flux<OperatingHoursInfoResponseDto> saveTheaterOperatingHours(
             @PathVariable @NotNull(message = "The theater id must be valid.") UUID theaterId,
@@ -52,6 +54,7 @@ public class OperatingHoursController {
     }
 
     @HasManagerRole
+    @CacheEvict(value = "operating_hours", key = "#theaterId")
     @PutMapping("/{operatingHoursId}")
     public Mono<ResponseEntity<OperatingHoursInfoResponseDto>> updateOperatingHours(
             @PathVariable @NotNull(message = "The theater id must be valid.") UUID theaterId,
@@ -67,7 +70,7 @@ public class OperatingHoursController {
     }
 
     @HasManagerRole
-    @Cacheable(value = "products", key = "#theaterId")
+    @CacheEvict(value = "operating_hours", key = "#theaterId")
     @DeleteMapping("/{operatingHoursId}")
     public Mono<ResponseEntity<Void>> deleteOperatingHours(
             @PathVariable @NotNull(message = "The theater id must be valid.") UUID theaterId,

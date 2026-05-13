@@ -8,6 +8,8 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -32,12 +34,14 @@ import java.util.UUID;
 public class RoomController {
     private final RoomService roomService;
 
+    @Cacheable(value = "rooms", key = "#theaterId")
     @GetMapping
     public Flux<RoomResponseDto> getAllRooms(@PathVariable("theaterId") @NotNull UUID theaterId) {
         return roomService.getAllRooms(theaterId);
     }
 
     @HasManagerRole
+    @CacheEvict(value = "rooms", key = "#theaterId")
     @PostMapping
     public Flux<RoomResponseDto> saveRooms(
             @PathVariable("theaterId") @NotNull UUID theaterId,
@@ -47,6 +51,7 @@ public class RoomController {
     }
 
     @HasManagerRole
+    @CacheEvict(value = "rooms", key = "#theaterId")
     @PutMapping("/{roomId}")
     public Mono<ResponseEntity<RoomResponseDto>> updateRoom(
             @PathVariable("theaterId") @NotNull UUID theaterId,
@@ -58,6 +63,7 @@ public class RoomController {
     }
 
     @HasManagerRole
+    @CacheEvict(value = "rooms", key = "#theaterId")
     @DeleteMapping("/{roomId}")
     public Mono<ResponseEntity<Void>> deleteRoom(
             @PathVariable("theaterId") @NotNull UUID theaterId,
