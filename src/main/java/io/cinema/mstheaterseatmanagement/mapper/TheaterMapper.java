@@ -48,12 +48,14 @@ public interface TheaterMapper {
                 .map(r -> new OperatingHoursResponseDto(r.dayOfWeek(), r.startTime(), r.endTime()))
                 .toList();
 
+        var address = AddressUtils.toAddress(first.street(), first.city(), first.state(), first.country(), first.zip());
+
         return TheaterResponseDto.builder()
                 .theaterId(theaterId.toString())
                 .name(first.name())
                 .email(first.email())
                 .phone(first.phone())
-                .location(first.street() + ", " + first.city() + ", " + first.state())
+                .location(address)
                 .operatingHours(ohList)
                 .build();
     }

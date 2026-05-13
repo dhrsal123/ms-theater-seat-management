@@ -24,7 +24,7 @@ public class AddressUtils {
         );
     }
 
-    private static String toAddress(String street, String city, String state, String country, String zip) {
+    public static String toAddress(String street, String city, String state, String country, String zip) {
         String baseAddress = Stream.of(street, city, state, country)
                 .filter(Objects::nonNull)
                 .filter(Predicate.not(String::isBlank))

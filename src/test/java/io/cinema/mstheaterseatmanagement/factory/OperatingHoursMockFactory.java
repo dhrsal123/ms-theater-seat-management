@@ -2,6 +2,7 @@ package io.cinema.mstheaterseatmanagement.factory;
 
 import io.cinema.mstheaterseatmanagement.domain.dto.request.OperatingHoursRequestDto;
 import io.cinema.mstheaterseatmanagement.domain.dto.response.OperatingHoursInfoResponseDto;
+import io.cinema.mstheaterseatmanagement.domain.dto.response.OperatingHoursResponseDto;
 import io.cinema.mstheaterseatmanagement.domain.entity.OperatingHoursEntity;
 import lombok.experimental.UtilityClass;
 
@@ -15,6 +16,15 @@ public class OperatingHoursMockFactory {
     public static OperatingHoursInfoResponseDto buildOperatingHoursInfoResponseDto(UUID operatingHourId) {
         return new OperatingHoursInfoResponseDto(
                 operatingHourId,
+                DayOfWeek.FRIDAY,
+                LocalTime.NOON,
+                LocalTime.MIDNIGHT
+        );
+    }
+
+
+    public static OperatingHoursResponseDto buildOperatingHoursResponseDto() {
+        return new OperatingHoursResponseDto(
                 DayOfWeek.FRIDAY,
                 LocalTime.NOON,
                 LocalTime.MIDNIGHT

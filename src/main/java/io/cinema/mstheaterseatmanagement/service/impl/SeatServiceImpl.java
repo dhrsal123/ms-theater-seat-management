@@ -41,9 +41,9 @@ public class SeatServiceImpl implements SeatService {
     }
 
     @Override
-    public Flux<SeatResponseDto> createSeats(UUID theaterId, List<SeatRequestDto> seatRequestDtos) {
+    public Flux<SeatResponseDto> createSeats(UUID theaterId, UUID roomId, List<SeatRequestDto> seatRequestDtos) {
         return Flux.fromIterable(seatRequestDtos)
-                .flatMap(dto -> validateRoomBelongsToTheater(theaterId, dto.roomId())
+                .flatMap(dto -> validateRoomBelongsToTheater(theaterId, roomId)
                         .thenReturn(dto)
                 )
                 .map(seatMapper::toEntity)
@@ -57,10 +57,10 @@ public class SeatServiceImpl implements SeatService {
     }
 
     @Override
-    public Mono<SeatResponseDto> updateSeat(UUID theaterId, UUID seatId, SeatRequestDto dto) {
+    public Mono<SeatResponseDto> updateSeat(UUID theaterId, UUID roomId, UUID seatId, SeatRequestDto dto) {
         return seatRepository.findById(seatId)
                 .switchIfEmpty(Mono.error(new CinemaException("Seat not found", BAD_REQUEST)))
-                .flatMap(existingSeat -> validateRoomBelongsToTheater(theaterId, dto.roomId())
+                .flatMap(existingSeat -> validateRoomBelongsToTheater(theaterId, roomId)
                         .then(Mono.defer(() -> {
                             seatMapper.updateEntityFromDto(dto, existingSeat);
                             return seatRepository.save(existingSeat);
@@ -74,24 +74,44 @@ public class SeatServiceImpl implements SeatService {
     }
 
     @Override
-    public Mono<Void> deleteSeat(UUID theaterId, UUID seatId) {
+    public Mono<Void> deleteSeat(UUID theaterId, UUID roomId, UUID seatId) {
         return seatRepository.findById(seatId)
                 .switchIfEmpty(Mono.error(new CinemaException("Seat not found", BAD_REQUEST)))
-                .flatMap(seat -> validateRoomBelongsToTheater(theaterId, seat.getRoomId())
+                .flatMap(seat -> validateRoomBelongsToTheater(theaterId, seat.getRoomId(), roomId)
                         .then(seatRepository.deleteById(seatId))
                 )
                 .as(transactionalOperator::transactional)
+                .onErrorResume(e -> {
+                    if (e instanceof CinemaException) return Mono.error(e);
+                    return Mono.error(new CinemaException("DB error deleting seat", TECHNICAL_ERROR));
+                })
                 .doOnError(e -> log.error("Failed to delete seat {}: {}", seatId, e.getMessage()))
-                .onErrorMap(e -> !(e instanceof CinemaException),
-                        e -> new CinemaException("DB error deleting seat", TECHNICAL_ERROR));
+                .then();
     }
 
     // private methods
-    private Mono<Void> validateRoomBelongsToTheater(UUID theaterId, UUID roomId) {
-        return roomRepository.findById(roomId)
+    private Mono<Void> validateRoomBelongsToTheater(UUID theaterId, UUID entityRoomId, UUID requestRoomId) {
+        return roomRepository.findById(entityRoomId)
                 .switchIfEmpty(Mono.error(new CinemaException("Room not found", BAD_REQUEST)))
                 .flatMap(room -> {
-                    if (!room.getTheaterId().equals(theaterId)) {
+                    var roomTheaterId = room.getTheaterId();
+                    if (!roomTheaterId.equals(theaterId) || !requestRoomId.equals(room.getId())) {
+                        return Mono.error(new CinemaException(
+                                "Room does not belong to the specified theater",
+                                BAD_REQUEST
+                        ));
+                    }
+                    return Mono.empty();
+                });
+    }
+
+
+    private Mono<Void> validateRoomBelongsToTheater(UUID theaterId, UUID entityRoomId) {
+        return roomRepository.findById(entityRoomId)
+                .switchIfEmpty(Mono.error(new CinemaException("Room not found", BAD_REQUEST)))
+                .flatMap(room -> {
+                    var roomTheaterId = room.getTheaterId();
+                    if (!roomTheaterId.equals(theaterId)) {
                         return Mono.error(new CinemaException(
                                 "Room does not belong to the specified theater",
                                 BAD_REQUEST

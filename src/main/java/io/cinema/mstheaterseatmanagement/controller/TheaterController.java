@@ -8,6 +8,9 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -33,7 +36,7 @@ public class TheaterController {
 
     private final TheaterService theaterService;
 
-    //    @Cacheable(cacheNames = CachingConfig.THEATERS_CACHE)
+    @Cacheable(value = "theaters", key = "{#page, #size}")
     @GetMapping(params = {"page", "size"})
     public Flux<TheaterResponseDto> getAllTheaters(
             @RequestParam("page") int page,
@@ -42,6 +45,7 @@ public class TheaterController {
         return theaterService.getAllTheaters(page, size);
     }
 
+    @Cacheable(value = "theater", key = "#theaterId")
     @GetMapping("/{theaterId}")
     public Mono<ResponseEntity<TheaterResponseDto>> getTheaterById(@PathVariable @NotNull UUID theaterId) {
         return theaterService.getTheaterById(theaterId)
@@ -50,6 +54,7 @@ public class TheaterController {
     }
 
     @HasManagerRole
+    @CacheEvict(value = "theaters", allEntries = true)
     @PostMapping
     public Mono<ResponseEntity<TheaterResponseDto>> createTheater(@RequestBody @Valid TheaterRequestDto theater) {
         return theaterService.createTheater(theater)
@@ -57,6 +62,10 @@ public class TheaterController {
     }
 
     @HasManagerRole
+    @Caching(evict = {
+            @CacheEvict(value = "theater", key = "#theaterId"),
+            @CacheEvict(value = "theaters", allEntries = true)
+    })
     @PutMapping("/{theaterId}")
     public Mono<ResponseEntity<TheaterResponseDto>> updateTheater(
             @PathVariable @NotNull UUID theaterId,
@@ -67,6 +76,10 @@ public class TheaterController {
     }
 
     @HasManagerRole
+    @Caching(evict = {
+            @CacheEvict(value = "theater", key = "#theaterId"),
+            @CacheEvict(value = "theaters", allEntries = true)
+    })
     @DeleteMapping("/{theaterId}")
     public Mono<ResponseEntity<Void>> deleteTheater(@PathVariable @NotNull UUID theaterId) {
         return theaterService.deleteTheater(theaterId)

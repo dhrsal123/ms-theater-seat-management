@@ -24,14 +24,13 @@ public class SeatMockFactory {
     }
 
 
-    public static SeatRequestDto buildSeatRequestDto(UUID roomId) {
+    public static SeatRequestDto buildSeatRequestDto() {
         return new SeatRequestDto(
                 Double.valueOf("10.1"),
                 1,
                 1,
                 SeatStatus.OPERATIONAL,
-                SeatTypes.PREMIUM,
-                roomId
+                SeatTypes.PREMIUM
         );
     }
 
