@@ -88,7 +88,8 @@ class RoomServiceImplTest {
         // given
         var theaterId = UUID.randomUUID();
         var roomId = UUID.randomUUID();
-        var theater = TheaterMockFactory.buildTheaterEntity(theaterId);
+        var addressId = UUID.randomUUID();
+        var theater = TheaterMockFactory.buildTheaterEntity(theaterId, addressId);
 
         var roomRequest = RoomMockFactory.buildRoomRequestDto();
         var roomEntity = RoomMockFactory.buildRoomEntity(roomId, theaterId);
@@ -228,7 +229,8 @@ class RoomServiceImplTest {
     void shouldMapErrorOnSaveRooms() {
         // given
         var theaterId = UUID.randomUUID();
-        var theater = TheaterMockFactory.buildTheaterEntity(theaterId);
+        var addressId = UUID.randomUUID();
+        var theater = TheaterMockFactory.buildTheaterEntity(theaterId, addressId);
         var roomRequest = RoomMockFactory.buildRoomRequestDto();
 
         // when

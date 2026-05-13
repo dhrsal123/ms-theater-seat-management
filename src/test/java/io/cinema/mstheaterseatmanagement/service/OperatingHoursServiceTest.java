@@ -116,7 +116,8 @@ class OperatingHoursServiceTest {
         var operatingHourId = UUID.randomUUID();
         var operatingHour = buildOperatingHoursInfoResponseDto(operatingHourId);
         var operatingHoursEntity = buildOperatingHoursEntity(operatingHourId, theaterId);
-        var theater = buildTheaterEntity(theaterId);
+        var addressId = UUID.randomUUID();
+        var theater = buildTheaterEntity(theaterId, addressId);
 
         when(theaterRepository.findById(theaterId)).thenReturn(Mono.just(theater));
         when(operatingHoursRepository.saveAll(anyIterable())).thenReturn(Flux.just(operatingHoursEntity));

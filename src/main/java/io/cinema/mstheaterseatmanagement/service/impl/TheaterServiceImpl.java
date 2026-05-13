@@ -147,7 +147,8 @@ public class TheaterServiceImpl implements TheaterService {
     }
 
     private Mono<List<OperatingHoursEntity>> saveOperatingHours(TheaterRequestDto dto, UUID theaterId) {
-        var hoursToSave = dto.operatingHours().stream()
+        var operatingHours = dto.operatingHours();
+        var hoursToSave = operatingHours.stream()
                 .map(h -> operatingHoursMapper.toEntity(h, theaterId))
                 .toList();
 

@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -33,6 +34,7 @@ import java.util.UUID;
 public class OperatingHoursController {
     private final OperatingHoursService operatingHoursService;
 
+    @Cacheable(value = "operating_hours", key = "#theaterId")
     @GetMapping
     public Flux<OperatingHoursInfoResponseDto> getTheaterOperatingHours(
             @PathVariable @NotNull UUID theaterId
@@ -65,6 +67,7 @@ public class OperatingHoursController {
     }
 
     @HasManagerRole
+    @Cacheable(value = "products", key = "#theaterId")
     @DeleteMapping("/{operatingHoursId}")
     public Mono<ResponseEntity<Void>> deleteOperatingHours(
             @PathVariable @NotNull(message = "The theater id must be valid.") UUID theaterId,
