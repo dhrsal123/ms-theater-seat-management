@@ -1,6 +1,7 @@
 package io.cinema.mstheaterseatmanagement;
 
 import io.cinema.config.AuditingConfig;
+import io.cinema.config.RedisConfig;
 import io.cinema.controller.ExceptionHandlers;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -13,7 +14,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 @EnableReactiveMethodSecurity
 @EnableCaching
 @ComponentScan(basePackages = "io.cinema")
-@Import({ExceptionHandlers.class, AuditingConfig.class})
+@Import({ExceptionHandlers.class, AuditingConfig.class, RedisConfig.class})
 public class MsTheaterSeatManagementApplication {
 
     public static void main(String[] args) {
