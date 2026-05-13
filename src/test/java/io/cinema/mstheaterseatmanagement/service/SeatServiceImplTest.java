@@ -84,7 +84,7 @@ class SeatServiceImplTest {
         var roomId = UUID.randomUUID();
         var roomEntity = RoomMockFactory.buildRoomEntity(roomId, theaterId);
 
-        var seatRequest = SeatMockFactory.buildSeatRequestDto(roomId);
+        var seatRequest = SeatMockFactory.buildSeatRequestDto();
         var seatRequests = List.of(seatRequest);
         var seatId = UUID.randomUUID();
         var seatEntity = SeatMockFactory.buildSeatEntity(seatId, roomId);
@@ -94,7 +94,7 @@ class SeatServiceImplTest {
         when(roomRepository.findById(roomId)).thenReturn(Mono.just(roomEntity));
         when(seatRepository.saveAll(anyIterable())).thenReturn(Flux.just(seatEntity));
 
-        var response = seatService.createSeats(theaterId, seatRequests);
+        var response = seatService.createSeats(theaterId, roomId, seatRequests);
 
         StepVerifier.create(response)
                 .expectNext(seatResponse)
@@ -111,7 +111,7 @@ class SeatServiceImplTest {
         var roomId = UUID.randomUUID();
         var roomEntity = RoomMockFactory.buildRoomEntity(roomId, theaterId);
 
-        var seatRequest = SeatMockFactory.buildSeatRequestDto(roomId);
+        var seatRequest = SeatMockFactory.buildSeatRequestDto();
         var seatId = UUID.randomUUID();
         var seatEntity = SeatMockFactory.buildSeatEntity(seatId, roomId);
 
@@ -121,7 +121,7 @@ class SeatServiceImplTest {
         when(seatRepository.findById(seatId)).thenReturn(Mono.just(seatEntity));
         when(seatRepository.save(seatEntity)).thenReturn(Mono.just(seatEntity));
 
-        var response = seatService.updateSeat(theaterId, seatId, seatRequest);
+        var response = seatService.updateSeat(theaterId, roomId, seatId, seatRequest);
 
         StepVerifier.create(response)
                 .expectNext(seatResponse)
@@ -145,7 +145,7 @@ class SeatServiceImplTest {
         when(seatRepository.findById(seatId)).thenReturn(Mono.just(seatEntity));
         when(seatRepository.deleteById(seatId)).thenReturn(Mono.empty());
 
-        var response = seatService.deleteSeat(theaterId, seatId);
+        var response = seatService.deleteSeat(theaterId, roomId, seatId);
 
         StepVerifier.create(response)
                 .verifyComplete();
@@ -194,11 +194,11 @@ class SeatServiceImplTest {
         var theaterId = UUID.randomUUID();
         var roomId = UUID.randomUUID();
         var seatId = UUID.randomUUID();
-        var seatRequest = SeatMockFactory.buildSeatRequestDto(roomId);
+        var seatRequest = SeatMockFactory.buildSeatRequestDto();
 
         when(seatRepository.findById(seatId)).thenReturn(Mono.empty());
 
-        var response = seatService.updateSeat(theaterId, seatId, seatRequest);
+        var response = seatService.updateSeat(theaterId, roomId, seatId, seatRequest);
 
         StepVerifier.create(response)
                 .expectErrorMatches(throwable -> throwable instanceof CinemaException &&
@@ -210,11 +210,12 @@ class SeatServiceImplTest {
     @Test
     void shouldFailToDeleteSeatWhenSeatNotFound() {
         var theaterId = UUID.randomUUID();
+        var roomId = UUID.randomUUID();
         var seatId = UUID.randomUUID();
 
         when(seatRepository.findById(seatId)).thenReturn(Mono.empty());
 
-        var response = seatService.deleteSeat(theaterId, seatId);
+        var response = seatService.deleteSeat(theaterId, roomId, seatId);
 
         StepVerifier.create(response)
                 .expectErrorMatches(throwable -> throwable instanceof CinemaException &&
@@ -247,13 +248,13 @@ class SeatServiceImplTest {
         var roomId = UUID.randomUUID();
         var roomEntity = RoomMockFactory.buildRoomEntity(roomId, theaterId);
 
-        var seatRequest = SeatMockFactory.buildSeatRequestDto(roomId);
+        var seatRequest = SeatMockFactory.buildSeatRequestDto();
         var seatRequests = List.of(seatRequest);
 
         when(roomRepository.findById(roomId)).thenReturn(Mono.just(roomEntity));
         when(seatRepository.saveAll(anyIterable())).thenReturn(Flux.error(new RuntimeException("DB Save Failure")));
 
-        var response = seatService.createSeats(theaterId, seatRequests);
+        var response = seatService.createSeats(theaterId, roomId, seatRequests);
 
         StepVerifier.create(response)
                 .expectErrorMatches(throwable -> throwable instanceof CinemaException &&
@@ -268,7 +269,7 @@ class SeatServiceImplTest {
         var roomId = UUID.randomUUID();
         var roomEntity = RoomMockFactory.buildRoomEntity(roomId, theaterId);
 
-        var seatRequest = SeatMockFactory.buildSeatRequestDto(roomId);
+        var seatRequest = SeatMockFactory.buildSeatRequestDto();
         var seatId = UUID.randomUUID();
         var seatEntity = SeatMockFactory.buildSeatEntity(seatId, roomId);
 
@@ -276,7 +277,7 @@ class SeatServiceImplTest {
         when(seatRepository.findById(seatId)).thenReturn(Mono.just(seatEntity));
         when(seatRepository.save(any())).thenReturn(Mono.error(new RuntimeException("DB Update Failure")));
 
-        var response = seatService.updateSeat(theaterId, seatId, seatRequest);
+        var response = seatService.updateSeat(theaterId, roomId, seatId, seatRequest);
 
         StepVerifier.create(response)
                 .expectErrorMatches(throwable -> throwable instanceof CinemaException &&
@@ -298,7 +299,7 @@ class SeatServiceImplTest {
         when(seatRepository.findById(seatId)).thenReturn(Mono.just(seatEntity));
         when(seatRepository.deleteById(seatId)).thenReturn(Mono.error(new RuntimeException("DB Delete Failure")));
 
-        var response = seatService.deleteSeat(theaterId, seatId);
+        var response = seatService.deleteSeat(theaterId, roomId, seatId);
 
         StepVerifier.create(response)
                 .expectErrorMatches(throwable -> throwable instanceof CinemaException &&
@@ -306,4 +307,71 @@ class SeatServiceImplTest {
                         ((CinemaException) throwable).getExceptionType() == TECHNICAL_ERROR)
                 .verify();
     }
+
+    @Test
+    void shouldFailWhenRoomBelongsToDifferentTheater() {
+        var pathTheaterId = UUID.randomUUID();
+        var actualTheaterIdInDb = UUID.randomUUID();
+        var roomId = UUID.randomUUID();
+        var seatId = UUID.randomUUID();
+
+        var seatEntity = SeatMockFactory.buildSeatEntity(seatId, roomId);
+        var roomEntity = RoomMockFactory.buildRoomEntity(roomId, actualTheaterIdInDb);
+
+        when(seatRepository.findById(seatId)).thenReturn(Mono.just(seatEntity));
+        when(roomRepository.findById(roomId)).thenReturn(Mono.just(roomEntity));
+        when(seatRepository.deleteById(seatId)).thenReturn(Mono.empty());
+
+        var response = seatService.deleteSeat(pathTheaterId, roomId, seatId);
+
+        StepVerifier.create(response)
+                .expectErrorMatches(throwable -> throwable instanceof CinemaException &&
+                        throwable.getMessage().equals("Room does not belong to the specified theater") &&
+                        ((CinemaException) throwable).getExceptionType() == BAD_REQUEST)
+                .verify();
+    }
+
+    @Test
+    void shouldFailWhenPathRoomIdMismatchesActualSeatRoomId() {
+        var theaterId = UUID.randomUUID();
+        var pathRoomId = UUID.randomUUID();
+        var actualSeatRoomId = UUID.randomUUID();
+        var seatId = UUID.randomUUID();
+
+        var seatEntity = SeatMockFactory.buildSeatEntity(seatId, actualSeatRoomId);
+        var roomEntity = RoomMockFactory.buildRoomEntity(actualSeatRoomId, theaterId);
+
+        when(seatRepository.findById(seatId)).thenReturn(Mono.just(seatEntity));
+        when(roomRepository.findById(actualSeatRoomId)).thenReturn(Mono.just(roomEntity));
+        when(seatRepository.deleteById(seatId)).thenReturn(Mono.empty());
+
+        var response = seatService.deleteSeat(theaterId, pathRoomId, seatId);
+
+        StepVerifier.create(response)
+                .expectErrorMatches(throwable -> throwable instanceof CinemaException &&
+                        throwable.getMessage().equals("Room does not belong to the specified theater") &&
+                        ((CinemaException) throwable).getExceptionType() == BAD_REQUEST)
+                .verify();
+    }
+
+    @Test
+    void shouldFailWhenRoomForSeatNotFound() {
+        var theaterId = UUID.randomUUID();
+        var roomId = UUID.randomUUID();
+        var seatId = UUID.randomUUID();
+        var seatEntity = SeatMockFactory.buildSeatEntity(seatId, roomId);
+
+        when(seatRepository.findById(seatId)).thenReturn(Mono.just(seatEntity));
+        when(roomRepository.findById(roomId)).thenReturn(Mono.empty());
+        when(seatRepository.deleteById(seatId)).thenReturn(Mono.empty());
+
+        var response = seatService.deleteSeat(theaterId, roomId, seatId);
+
+        StepVerifier.create(response)
+                .expectErrorMatches(throwable -> throwable instanceof CinemaException &&
+                        throwable.getMessage().equals("Room not found") &&
+                        ((CinemaException) throwable).getExceptionType() == BAD_REQUEST)
+                .verify();
+    }
+
 }
