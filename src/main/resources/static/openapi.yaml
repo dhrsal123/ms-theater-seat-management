@@ -419,7 +419,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
-  /api/v1/theaters/{theaterId}/seats:
+  /api/v1/theaters/{theaterId}/rooms/{roomId}/seats:
     get:
       tags:
         - Seats
@@ -428,13 +428,7 @@ paths:
       operationId: getAllSeats
       parameters:
         - $ref: "#/components/parameters/TheaterIdPath"
-        - name: roomId
-          in: query
-          required: true
-          description: The UUID of the room to fetch seats for.
-          schema:
-            type: string
-            format: uuid
+        - $ref: "#/components/parameters/RoomIdPath"
       responses:
         "200":
           description: Successfully retrieved seats.
@@ -459,6 +453,7 @@ paths:
         - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/TheaterIdPath"
+        - $ref: "#/components/parameters/RoomIdPath"
       requestBody:
         required: true
         content:
@@ -485,7 +480,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
-  /api/v1/theaters/{theaterId}/seats/{seatId}:
+  /api/v1/theaters/{theaterId}/rooms/{roomId}/seats/{seatId}:
     put:
       tags:
         - Seats
@@ -496,6 +491,7 @@ paths:
         - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/TheaterIdPath"
+        - $ref: "#/components/parameters/RoomIdPath"
         - $ref: "#/components/parameters/SeatIdPath"
       requestBody:
         required: true
@@ -531,6 +527,7 @@ paths:
         - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/TheaterIdPath"
+        - $ref: "#/components/parameters/RoomIdPath"
         - $ref: "#/components/parameters/SeatIdPath"
       responses:
         "204":
@@ -643,17 +640,6 @@ components:
             message: "Business Error. Conflict in data."
             code: "CINEMA-003"
             status: "CONFLICT"
-
-    PreconditionFailed:
-      description: Precondition Failed. Business logic validation failed.
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/BaseErrorDto"
-          example:
-            message: "El usuario ya existe."
-            code: "CINEMA-006"
-            status: "PRECONDITION_FAILED"
 
     InternalServerError:
       description: Internal Server Error. Raised directly by generic Exceptions or Database transaction failures.
