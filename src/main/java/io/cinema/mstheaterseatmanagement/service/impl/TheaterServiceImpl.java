@@ -68,7 +68,7 @@ public class TheaterServiceImpl implements TheaterService {
                 .filter(projection -> Objects.nonNull(projection.theaterId()))
                 .collectList()
                 .filter(list -> !list.isEmpty())
-                .switchIfEmpty(Mono.error(new CinemaException(THEATER_NOT_FOUND, CinemaExceptionTypes.BAD_REQUEST)))
+                .switchIfEmpty(Mono.error(new CinemaException(THEATER_NOT_FOUND, CinemaExceptionTypes.NOT_FOUND)))
                 .map(rows -> theaterMapper.toTheaterDtoFromProjections(rows, theaterId))
                 .as(transactionalOperator::transactional)
                 .doOnError(e -> log.error("Failed to fetch theater {}: {}", theaterId, e.getMessage()))
@@ -96,7 +96,7 @@ public class TheaterServiceImpl implements TheaterService {
     @Override
     public Mono<TheaterResponseDto> updateTheater(UUID theaterId, TheaterRequestDto dto) {
         return theaterRepository.findById(theaterId)
-                .switchIfEmpty(Mono.error(new CinemaException(THEATER_NOT_FOUND, CinemaExceptionTypes.BAD_REQUEST)))
+                .switchIfEmpty(Mono.error(new CinemaException(THEATER_NOT_FOUND, CinemaExceptionTypes.NOT_FOUND)))
                 .flatMap(theater -> addressRepository.findById(theater.getAddressId())
                         .flatMap(address -> {
                             addressMapper.updateEntityFromDto(dto.address(), address);
@@ -125,7 +125,7 @@ public class TheaterServiceImpl implements TheaterService {
     @Override
     public Mono<Void> deleteTheater(UUID theaterId) {
         return theaterRepository.findById(theaterId)
-                .switchIfEmpty(Mono.error(new CinemaException(THEATER_NOT_FOUND, CinemaExceptionTypes.BAD_REQUEST)))
+                .switchIfEmpty(Mono.error(new CinemaException(THEATER_NOT_FOUND, CinemaExceptionTypes.NOT_FOUND)))
                 .flatMap(this::cascadeDeleteDependencies)
                 .as(transactionalOperator::transactional)
                 .doOnError(e -> log.error("Deletion failed for {}: {}", theaterId, e.getMessage()))

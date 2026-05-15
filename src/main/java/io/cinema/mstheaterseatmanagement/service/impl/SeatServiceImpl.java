@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static io.cinema.domain.enumerated.CinemaExceptionTypes.BAD_REQUEST;
+import static io.cinema.domain.enumerated.CinemaExceptionTypes.NOT_FOUND;
 import static io.cinema.domain.enumerated.CinemaExceptionTypes.TECHNICAL_ERROR;
 
 @Slf4j
@@ -59,7 +60,7 @@ public class SeatServiceImpl implements SeatService {
     @Override
     public Mono<SeatResponseDto> updateSeat(UUID theaterId, UUID roomId, UUID seatId, SeatRequestDto dto) {
         return seatRepository.findById(seatId)
-                .switchIfEmpty(Mono.error(new CinemaException("Seat not found", BAD_REQUEST)))
+                .switchIfEmpty(Mono.error(new CinemaException("Seat not found", NOT_FOUND)))
                 .flatMap(existingSeat -> validateRoomBelongsToTheater(theaterId, roomId)
                         .then(Mono.defer(() -> {
                             seatMapper.updateEntityFromDto(dto, existingSeat);
@@ -76,7 +77,7 @@ public class SeatServiceImpl implements SeatService {
     @Override
     public Mono<Void> deleteSeat(UUID theaterId, UUID roomId, UUID seatId) {
         return seatRepository.findById(seatId)
-                .switchIfEmpty(Mono.error(new CinemaException("Seat not found", BAD_REQUEST)))
+                .switchIfEmpty(Mono.error(new CinemaException("Seat not found", NOT_FOUND)))
                 .flatMap(seat -> validateRoomBelongsToTheater(theaterId, seat.getRoomId(), roomId)
                         .then(seatRepository.deleteById(seatId))
                 )
@@ -92,7 +93,7 @@ public class SeatServiceImpl implements SeatService {
     // private methods
     private Mono<Void> validateRoomBelongsToTheater(UUID theaterId, UUID entityRoomId, UUID requestRoomId) {
         return roomRepository.findById(entityRoomId)
-                .switchIfEmpty(Mono.error(new CinemaException("Room not found", BAD_REQUEST)))
+                .switchIfEmpty(Mono.error(new CinemaException("Room not found", NOT_FOUND)))
                 .flatMap(room -> {
                     var roomTheaterId = room.getTheaterId();
                     if (!roomTheaterId.equals(theaterId) || !requestRoomId.equals(room.getId())) {
@@ -108,7 +109,7 @@ public class SeatServiceImpl implements SeatService {
 
     private Mono<Void> validateRoomBelongsToTheater(UUID theaterId, UUID entityRoomId) {
         return roomRepository.findById(entityRoomId)
-                .switchIfEmpty(Mono.error(new CinemaException("Room not found", BAD_REQUEST)))
+                .switchIfEmpty(Mono.error(new CinemaException("Room not found", NOT_FOUND)))
                 .flatMap(room -> {
                     var roomTheaterId = room.getTheaterId();
                     if (!roomTheaterId.equals(theaterId)) {
