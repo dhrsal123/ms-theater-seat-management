@@ -35,7 +35,7 @@ import reactor.test.StepVerifier;
 
 import java.util.UUID;
 
-import static io.cinema.domain.enumerated.CinemaExceptionTypes.BAD_REQUEST;
+import static io.cinema.domain.enumerated.CinemaExceptionTypes.NOT_FOUND;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyIterable;
 import static org.mockito.Mockito.verify;
@@ -137,7 +137,7 @@ class TheaterServiceImplTest {
         StepVerifier.create(response)
                 .expectErrorMatches(throwable -> throwable instanceof CinemaException &&
                         throwable.getMessage().equals("Theater not found") &&
-                        ((CinemaException) throwable).getExceptionType() == BAD_REQUEST)
+                        ((CinemaException) throwable).getExceptionType() == NOT_FOUND)
                 .verify();
     }
 

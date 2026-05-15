@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static io.cinema.domain.enumerated.CinemaExceptionTypes.BAD_REQUEST;
+import static io.cinema.domain.enumerated.CinemaExceptionTypes.NOT_FOUND;
 import static io.cinema.domain.enumerated.CinemaExceptionTypes.TECHNICAL_ERROR;
 
 @Slf4j
@@ -110,9 +111,10 @@ public class OperatingHoursServiceImpl implements OperatingHoursService {
                 );
     }
 
+    // private methods
     private Mono<Void> validateOperatingHoursBelongsToTheater(UUID theaterId, UUID operatingHoursId) {
         return operatingHoursRepository.findById(operatingHoursId)
-                .switchIfEmpty(Mono.error(new CinemaException("Operating hour not found", BAD_REQUEST)))
+                .switchIfEmpty(Mono.error(new CinemaException("Operating hour not found", NOT_FOUND)))
                 .flatMap(operatingHoursEntity -> {
                     if (!operatingHoursEntity.getTheaterId().equals(theaterId)) {
                         return Mono.error(new CinemaException(

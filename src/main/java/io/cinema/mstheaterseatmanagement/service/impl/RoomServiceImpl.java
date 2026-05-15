@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static io.cinema.domain.enumerated.CinemaExceptionTypes.BAD_REQUEST;
+import static io.cinema.domain.enumerated.CinemaExceptionTypes.NOT_FOUND;
 import static io.cinema.domain.enumerated.CinemaExceptionTypes.TECHNICAL_ERROR;
 
 @Slf4j
@@ -48,7 +49,7 @@ public class RoomServiceImpl implements RoomService {
     public Flux<RoomResponseDto> saveRooms(UUID theaterId, List<RoomRequestDto> roomRequestDtos) {
         return theaterRepository
                 .findById(theaterId)
-                .switchIfEmpty(Mono.error(new CinemaException("Theater not found.", BAD_REQUEST)))
+                .switchIfEmpty(Mono.error(new CinemaException("Theater not found.", NOT_FOUND)))
                 .flatMapMany(theaterEntity -> {
                     var roomEntities = roomRequestDtos.stream()
                             .map(dto -> roomMapper.toEntity(dto, theaterId))
@@ -99,7 +100,7 @@ public class RoomServiceImpl implements RoomService {
     //private methods
     private Mono<RoomEntity> getAndValidateRoomBelongsToTheater(UUID theaterId, UUID roomId) {
         return roomRepository.findById(roomId)
-                .switchIfEmpty(Mono.error(new CinemaException("Room not found.", BAD_REQUEST)))
+                .switchIfEmpty(Mono.error(new CinemaException("Room not found.", NOT_FOUND)))
                 .flatMap(room -> {
                     if (!room.getTheaterId().equals(theaterId)) {
                         return Mono.error(new CinemaException(
