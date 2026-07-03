@@ -40,7 +40,7 @@ public class RoomController {
         return roomService.getAllRooms(theaterId);
     }
 
-    @Cacheable(value = "room", key = "#theaterId")
+    @Cacheable(value = "room", key = "#roomId")
     @GetMapping("/{roomId}")
     public Mono<RoomResponseDto> getRoomById(
             @PathVariable("theaterId") @NotNull UUID theaterId,
