@@ -46,6 +46,24 @@ public class RoomServiceImpl implements RoomService {
     }
 
     @Override
+    public Mono<RoomResponseDto> getRoomById(UUID theaterId, UUID roomId) {
+        return roomRepository.findById(roomId)
+                .<RoomResponseDto>handle((roomEntity, sink) -> {
+                    if (!theaterId.equals(roomEntity.getTheaterId())) {
+                        sink.error(new CinemaException("The Room specified does not belong to the theater.", BAD_REQUEST));
+                        return;
+                    }
+                    sink.next(roomMapper.toResponseDto(roomEntity));
+                })
+                .as(transactionalOperator::transactional)
+                .doOnError(e -> log.error("Failed to find room by id {}: {}", roomId, e.getMessage()))
+                .onErrorMap(
+                        e -> !(e instanceof CinemaException),
+                        e -> new CinemaException("DB error during read", TECHNICAL_ERROR)
+                );
+    }
+
+    @Override
     public Flux<RoomResponseDto> saveRooms(UUID theaterId, List<RoomRequestDto> roomRequestDtos) {
         return theaterRepository
                 .findById(theaterId)

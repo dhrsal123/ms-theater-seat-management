@@ -11,6 +11,8 @@ import java.util.UUID;
 public interface RoomService {
     Flux<RoomResponseDto> getAllRooms(UUID theaterId);
 
+    Mono<RoomResponseDto> getRoomById(UUID theaterId, UUID roomId);
+
     Flux<RoomResponseDto> saveRooms(UUID theaterId, List<RoomRequestDto> roomRequestDtos);
 
     Mono<RoomResponseDto> updateRoom(UUID theaterId, UUID roomId, RoomRequestDto roomRequestDto);

@@ -40,6 +40,15 @@ public class RoomController {
         return roomService.getAllRooms(theaterId);
     }
 
+    @Cacheable(value = "room", key = "#theaterId")
+    @GetMapping("/{roomId}")
+    public Mono<RoomResponseDto> getRoomById(
+            @PathVariable("theaterId") @NotNull UUID theaterId,
+            @PathVariable("roomId") @NotNull UUID roomId
+    ) {
+        return roomService.getRoomById(theaterId, roomId);
+    }
+
     @HasManagerRole
     @CacheEvict(value = "rooms", key = "#theaterId")
     @PostMapping
