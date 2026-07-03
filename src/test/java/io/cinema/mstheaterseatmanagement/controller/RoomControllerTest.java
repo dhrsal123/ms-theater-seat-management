@@ -50,6 +50,26 @@ class RoomControllerTest {
     }
 
     @Test
+    void shouldGetRoomById() {
+        // given
+        var roomId = UUID.randomUUID();
+        var theaterId = UUID.randomUUID();
+
+        RoomResponseDto roomResponseDto = RoomMockFactory.buildRoomResponseDto(roomId, theaterId);
+        // when
+        when(roomService.getRoomById(theaterId, roomId)).thenReturn(Mono.just(roomResponseDto));
+
+        // then
+        webTestClient.get()
+                .uri("/api/v1/theaters/{theaterId}/rooms/{roomId}", theaterId, roomId)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(RoomResponseDto.class).contains(roomResponseDto);
+
+        verify(roomService).getRoomById(theaterId, roomId);
+    }
+
+    @Test
     void shouldSaveRooms() {
         // given
         var roomRequest = RoomMockFactory.buildRoomRequestDto();

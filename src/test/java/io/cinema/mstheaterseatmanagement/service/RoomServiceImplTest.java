@@ -23,6 +23,7 @@ import reactor.test.StepVerifier;
 import java.util.List;
 import java.util.UUID;
 
+import static io.cinema.domain.enumerated.CinemaExceptionTypes.BAD_REQUEST;
 import static io.cinema.domain.enumerated.CinemaExceptionTypes.NOT_FOUND;
 import static io.cinema.domain.enumerated.CinemaExceptionTypes.TECHNICAL_ERROR;
 import static org.mockito.ArgumentMatchers.any;
@@ -81,6 +82,51 @@ class RoomServiceImplTest {
 
         verify(roomRepository).findRoomEntityByTheaterId(theaterId);
         verify(transactionalOperator).transactional(any(Flux.class));
+    }
+
+    @Test
+    void shouldGetRoomById() {
+        // given
+        var roomId = UUID.randomUUID();
+        var theaterId = UUID.randomUUID();
+        var roomEntity = RoomMockFactory.buildRoomEntity(roomId, theaterId);
+        var roomResponse = RoomMockFactory.buildRoomResponseDto(roomId, theaterId);
+
+        // when
+        when(roomRepository.findById(roomId)).thenReturn(Mono.just(roomEntity));
+
+        // then
+        var response = roomService.getRoomById(theaterId, roomId);
+
+        StepVerifier.create(response)
+                .expectNext(roomResponse)
+                .verifyComplete();
+
+        verify(roomRepository).findById(roomId);
+        verify(transactionalOperator).transactional(any(Mono.class));
+    }
+
+    @Test
+    void shouldFailToGetRoomByIdWhenBelongsToDifferentTheater() {
+        // given
+        var expectedTheaterId = UUID.randomUUID();
+        var actualTheaterId = UUID.randomUUID();
+        var roomId = UUID.randomUUID();
+        var roomEntity = RoomMockFactory.buildRoomEntity(roomId, actualTheaterId);
+
+        // when
+        when(roomRepository.findById(roomId)).thenReturn(Mono.just(roomEntity));
+
+        // then
+        var response = roomService.getRoomById(expectedTheaterId, roomId);
+
+        StepVerifier.create(response)
+                .expectErrorMatches(throwable -> throwable instanceof CinemaException &&
+                        throwable.getMessage().equals("The Room specified does not belong to the theater.") &&
+                        ((CinemaException) throwable).getExceptionType() == BAD_REQUEST)
+                .verify();
+
+        verify(roomRepository).findById(roomId);
     }
 
     @Test
